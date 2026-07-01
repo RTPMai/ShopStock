@@ -266,7 +266,7 @@ tr:hover td{background:#F9FAFB}
       <div class="card-hd"><h3>Price Scraping</h3></div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:13px;color:#6B7280">Automatically check supplier URLs and update prices where possible.</div>
-        <button class="btn btn-green" onclick="runScrape()">Run Price Scrape Now</button>
+        <button class="btn btn-green btn-sm" onclick="runScrape()">Run Price Scrape Now</button>
         <div style="font-size:12px;color:#9CA3AF" id="scrape-status"></div>
       </div>
     </div>
@@ -275,7 +275,7 @@ tr:hover td{background:#F9FAFB}
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:13px;color:#6B7280">Upload a CSV to bulk-import items. Columns: name, department, category, supplier, supplierLink, unit, currentPrice, notes</div>
         <input type="file" id="csv-input" accept=".csv"/>
-        <button class="btn btn-green" onclick="importCSV(document.getElementById('csv-input'))" style="margin-top:8px">Import CSV</button>
+        <button class="btn btn-green btn-sm" onclick="importCSV(document.getElementById('csv-input'))" style="margin-top:8px">Import CSV</button>
         <div style="font-size:12px;color:#9CA3AF;margin-top:8px" id="import-status"></div>
       </div>
     </div>
@@ -283,7 +283,7 @@ tr:hover td{background:#F9FAFB}
       <div class="card-hd"><h3>Export</h3></div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:13px;color:#6B7280">Export all inventory data as CSV.</div>
-        <button class="btn btn-gray" onclick="exportCSV()">Export to CSV</button>
+        <button class="btn btn-gray btn-sm" onclick="exportCSV()">Export to CSV</button>
       </div>
     </div>
   </div>
