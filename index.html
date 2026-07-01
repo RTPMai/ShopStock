@@ -61,7 +61,7 @@ tr:hover td{background:#F9FAFB}
 .s-stock{background:#EAF5EE;color:#3D9A5C}
 .s-need{background:#FEE2E2;color:#DC2626}
 .s-ordered{background:#FEF3C7;color:#D97706}
-.s-arrived{background:#EFF6FF;color:#2563EB}
+.s-issue{background:#EFF6FF;color:#2563EB}
 
 /* Item detail page */
 .item-hero{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:28px;margin-bottom:20px}
@@ -493,10 +493,10 @@ function renderInventory() {
             <div class="order-card-actions">
               ${item.supplierLink&&!item.supplierLink.startsWith("email")&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" class="btn btn-gray btn-sm" style="text-decoration:none">🛒 Order</a>`:""}
               <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:5px 8px;font-size:12px;cursor:pointer;outline:none">
-                <option value="In Stock" ${(item.status||"In Stock")==="In Stock"?"selected":""}>🟢 In Stock</option>
-                <option value="Needs Ordered" ${item.status==="Needs Ordered"?"selected":""}>🔴 Needs Ordered</option>
-                <option value="Ordered" ${item.status==="Ordered"?"selected":""}>🟡 Ordered</option>
-                <option value="Arrived" ${item.status==="Arrived"?"selected":""}>🔵 Arrived</option>
+                <option value="In Stock" ${(item.status||"In Stock")==="In Stock"?"selected":""}>In Stock</option>
+                <option value="Needs Ordered" ${item.status==="Needs Ordered"?"selected":""}>Needs Ordered</option>
+                <option value="Ordered" ${item.status==="Ordered"?"selected":""}>Ordered</option>
+                <option value="Issue" ${item.status==="Issue"?"selected":""}>Issue</option>
               </select>
             </div>
           </div>`).join("")}
@@ -565,10 +565,10 @@ function renderFullInventory() {
               <td style="color:#6B7280">${item.unit||"—"}</td>
               <td>
                 <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:4px 6px;font-size:12px;cursor:pointer;outline:none">
-                  <option value="In Stock" ${(item.status||"In Stock")==="In Stock"?"selected":""}>🟢 In Stock</option>
-                  <option value="Needs Ordered" ${item.status==="Needs Ordered"?"selected":""}>🔴 Needs Ordered</option>
-                  <option value="Ordered" ${item.status==="Ordered"?"selected":""}>🟡 Ordered</option>
-                  <option value="Arrived" ${item.status==="Arrived"?"selected":""}>🔵 Arrived</option>
+                  <option value="In Stock" ${(item.status||"In Stock")==="In Stock"?"selected":""}>In Stock</option>
+                  <option value="Needs Ordered" ${item.status==="Needs Ordered"?"selected":""}>Needs Ordered</option>
+                  <option value="Ordered" ${item.status==="Ordered"?"selected":""}>Ordered</option>
+                  <option value="Issue" ${item.status==="Issue"?"selected":""}>Issue</option>
                 </select>
               </td>
               <td style="color:#6B7280">${item.lastOrdered?new Date(item.lastOrdered).toLocaleDateString():"Never"}</td>
@@ -610,13 +610,13 @@ function sortBy(col) { sortDir = sortCol===col ? -sortDir : 1; sortCol=col; rend
 function statusClass(s) {
   if(s==="Needs Ordered") return "s-need";
   if(s==="Ordered") return "s-ordered";
-  if(s==="Arrived") return "s-arrived";
+  if(s==="Issue") return "s-issue";
   return "s-stock";
 }
 function statusDot(s) {
   if(s==="Needs Ordered") return "🔴";
   if(s==="Ordered") return "🟡";
-  if(s==="Arrived") return "🔵";
+  if(s==="Issue") return "🔵";
   return "🟢";
 }
 
@@ -638,7 +638,7 @@ function renderQueue() {
       </div>
       <div class="queue-actions">
         ${item.status==="Needs Ordered"?`<button class="btn btn-amber btn-sm" onclick="updateStatus('${item.id}','Ordered')">Mark Ordered</button>`:""}
-        <button class="btn btn-green btn-sm" onclick="updateStatus('${item.id}','In Stock')">Mark Arrived</button>
+        <button class="btn btn-green btn-sm" onclick="updateStatus('${item.id}','In Stock')">Mark Issue</button>
         <button class="btn btn-gray btn-sm" onclick="viewItem('${item.id}')">Details</button>
       </div>
     </div>
@@ -694,7 +694,7 @@ function viewItem(id) {
             <button class="btn btn-amber" style="font-size:15px;padding:11px 20px" onclick="updateStatus('${item.id}','Ordered')">📦 Mark as Ordered</button>
           </div>`
           :item.status==="Ordered"?
-          `<button class="btn btn-green" style="font-size:16px;padding:12px 24px" onclick="updateStatus('${item.id}','In Stock')">✅ Mark as Arrived — Back in Stock</button>`
+          `<button class="btn btn-green" style="font-size:16px;padding:12px 24px" onclick="updateStatus('${item.id}','In Stock')">✅ Mark as Issue — Back in Stock</button>`
           :`<button class="btn btn-red" style="font-size:16px;padding:12px 24px" onclick="flagItem('${item.id}')">🚨 Flag as Needs Ordered</button>`
         }
         ${item.supplierLink&&!item.supplierLink.startsWith("email")&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" class="btn btn-green" style="text-decoration:none">🛒 Place Order</a>`:item.supplierLink?`<span class="btn btn-gray" style="cursor:default">📧 ${item.supplierLink}</span>`:""}
