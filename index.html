@@ -172,7 +172,20 @@ tr:hover td{background:#F9FAFB}
       <div style="font-size:22px;font-weight:700">Dashboard</div>
       <div style="font-size:13px;color:#6B7280;margin-top:2px" id="inv-sub"></div>
     </div>
-    <button class="btn btn-green" onclick="openAddModal()">+ Add Item</button>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:6px 10px">
+        <span style="font-size:12px;color:#6B7280;white-space:nowrap">Bulk:</span>
+        <select id="bulk-status-select" style="border:none;background:transparent;font-size:12px;color:#374151;outline:none;cursor:pointer">
+          <option value="">Change selected to...</option>
+          <option value="In Stock">In Stock</option>
+          <option value="Needs Ordered">Needs Ordered</option>
+          <option value="Ordered">Ordered</option>
+          <option value="Issue">Issue</option>
+        </select>
+        <button class="btn btn-green btn-sm" onclick="bulkStatusChange()">Apply</button>
+      </div>
+      <button class="btn btn-green" onclick="openAddModal()">+ Add Item</button>
+    </div>
   </div>
   <div class="stats" id="inv-stats"></div>
   <div id="needs-ordering-list"></div>
@@ -1081,20 +1094,30 @@ async function importCSV(input) {
   const headers = lines[0].split(",").map(h=>h.trim().toLowerCase().replace(/"/g,""));
   statusEl.textContent = `Found ${lines.length-1} rows, importing...`;
 
+  // Proper RFC 4180 CSV parser
+  function parseCSVLine(line) {
+    const vals = []; let cur = "", inQ = false, i = 0;
+    while(i < line.length) {
+      const ch = line[i];
+      if(ch === '"') {
+        if(inQ && line[i+1] === '"') { cur += '"'; i++; } // escaped quote
+        else { inQ = !inQ; }
+      } else if(ch === ',' && !inQ) {
+        vals.push(cur); cur = "";
+      } else {
+        cur += ch;
+      }
+      i++;
+    }
+    vals.push(cur);
+    return vals.map(v => v.trim());
+  }
+
   let imported = 0, failed = 0, skipped = 0;
   for(let i=1;i<lines.length;i++) {
-    // Handle quoted CSV values properly
-    const vals = [];
-    let cur = "", inQ = false;
-    for(const ch of lines[i]) {
-      if(ch==='"') { inQ=!inQ; }
-      else if(ch===','&&!inQ) { vals.push(cur.trim()); cur=""; }
-      else cur+=ch;
-    }
-    vals.push(cur.trim());
-
+    const vals = parseCSVLine(lines[i]);
     const obj = {};
-    headers.forEach((h,j)=>obj[h]=(vals[j]||"").replace(/^"|"$/g,""));
+    headers.forEach((h,j)=>obj[h]=(vals[j]||""));
     if(!obj.name) { skipped++; continue; }
 
     try {
