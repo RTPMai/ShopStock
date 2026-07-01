@@ -126,6 +126,27 @@ tr:hover td{background:#F9FAFB}
 .empty p{font-size:14px}
 
 @media(max-width:600px){.item-grid{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
+
+/* Department sections */
+.dept-section{margin-bottom:16px;border-radius:10px;overflow:hidden;border:2px solid #E5E7EB}
+.dept-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;font-weight:600;font-size:14px}
+.dept-header:hover{filter:brightness(.97)}
+.dept-toggle{font-size:18px;transition:transform .2s;line-height:1}
+.dept-toggle.collapsed{transform:rotate(-90deg)}
+.dept-body{border-top:1px solid rgba(0,0,0,.08)}
+.dept-body.hidden{display:none}
+.dept-count{font-size:12px;font-weight:500;opacity:.7;margin-left:8px}
+
+/* Needs ordering cards */
+.order-card{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.06);background:#fff}
+.order-card:last-child{border-bottom:none}
+.order-card:hover{background:#FAFAFA}
+.order-card-info{flex:1;min-width:0}
+.order-card-name{font-weight:600;font-size:14px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.order-card-meta{font-size:12px;color:#6B7280}
+.order-card-price{font-size:15px;font-weight:700;color:#111827;white-space:nowrap}
+.order-card-actions{display:flex;gap:6px;flex-shrink:0}
+.empty-dept{padding:20px;text-align:center;color:#9CA3AF;font-size:13px}
 </style>
 </head>
 <body>
@@ -136,62 +157,44 @@ tr:hover td{background:#F9FAFB}
     <div><div class="hdr-title">ShopStock</div><div class="hdr-sub">P&amp;M Apparel</div></div>
   </div>
   <div class="nav">
-    <button class="nav-btn active" id="nav-inventory" onclick="showPage('inventory',this)">Inventory</button>
-    <button class="nav-btn" id="nav-queue" onclick="showPage('queue',this)">
-      Order Queue<span class="badge" id="queue-badge" style="display:none">0</span>
+    <button class="nav-btn active" id="nav-inventory" onclick="showPage('inventory',this)">
+      🚨 Needs Ordering<span class="badge" id="queue-badge" style="display:none">0</span>
     </button>
+    <button class="nav-btn" id="nav-full" onclick="showPage('full',this)">Full Inventory</button>
+    <button class="nav-btn" id="nav-queue" onclick="showPage('queue',this)">Order Queue</button>
     <button class="nav-btn" id="nav-admin" onclick="showPage('admin',this)">Admin</button>
   </div>
 </div>
 
-<!-- Inventory page -->
+<!-- Needs Ordering page (default dashboard) -->
 <div id="page-inventory" class="page active">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
     <div>
-      <div style="font-size:22px;font-weight:700">Inventory</div>
+      <div style="font-size:22px;font-weight:700">Needs Ordering</div>
       <div style="font-size:13px;color:#6B7280;margin-top:2px" id="inv-sub"></div>
     </div>
     <button class="btn btn-green" onclick="openAddModal()">+ Add Item</button>
   </div>
   <div class="stats" id="inv-stats"></div>
-  <div class="card">
-    <div class="card-hd">
-      <div class="toolbar" style="margin:0;flex:1">
-        <input class="search-input" id="search" placeholder="Search items..." oninput="filterItems()"/>
-        <select class="filter-select" id="filter-dept" onchange="filterItems()">
-          <option value="">All Departments</option>
-        </select>
-        <select class="filter-select" id="filter-status" onchange="filterItems()">
-          <option value="">All Statuses</option>
-          <option>In Stock</option>
-          <option>Needs Ordered</option>
-          <option>Ordered</option>
-          <option>Arrived</option>
-        </select>
-        <select class="filter-select" id="filter-supplier" onchange="filterItems()">
-          <option value="">All Suppliers</option>
-        </select>
-      </div>
+  <div id="needs-ordering-list"></div>
+</div>
+
+<!-- Full Inventory page -->
+<div id="page-full" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:22px;font-weight:700">Full Inventory</div>
+      <div style="font-size:13px;color:#6B7280;margin-top:2px" id="full-sub"></div>
     </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th onclick="sortBy('name')">Item ↕</th>
-            <th onclick="sortBy('department')">Dept ↕</th>
-            <th onclick="sortBy('supplier')">Supplier ↕</th>
-            <th onclick="sortBy('currentPrice')">Price ↕</th>
-            <th>Unit</th>
-            <th onclick="sortBy('status')">Status ↕</th>
-            <th onclick="sortBy('lastOrdered')">Last Ordered ↕</th>
-            <th>Times/YTD</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="inv-table"></tbody>
-      </table>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input class="search-input" id="full-search" placeholder="Search items..." oninput="renderFullInventory()"/>
+      <select class="filter-select" id="full-filter-supplier" onchange="renderFullInventory()">
+        <option value="">All Suppliers</option>
+      </select>
+      <button class="btn btn-green" onclick="openAddModal()">+ Add Item</button>
     </div>
   </div>
+  <div id="full-inventory-list"></div>
 </div>
 
 <!-- Order Queue page -->
@@ -309,6 +312,25 @@ tr:hover td{background:#F9FAFB}
 
 <script>
 const API = "/api/items";
+
+const DEPT_COLORS = {
+  "Screen Printing": { bg: "#FFF3E0", border: "#FB8C00", text: "#E65100", dot: "#FB8C00" },
+  "Embroidery":      { bg: "#F3E5F5", border: "#8E24AA", text: "#6A1B9A", dot: "#8E24AA" },
+  "Office":          { bg: "#E3F2FD", border: "#1E88E5", text: "#0D47A1", dot: "#1E88E5" },
+  "General":         { bg: "#E8F5E9", border: "#43A047", text: "#1B5E20", dot: "#43A047" },
+  "Heat Seal":       { bg: "#FCE4EC", border: "#E91E63", text: "#880E4F", dot: "#E91E63" },
+  "Compiling":       { bg: "#E0F7FA", border: "#00ACC1", text: "#006064", dot: "#00ACC1" },
+  "DTF":             { bg: "#FFF8E1", border: "#FFB300", text: "#FF6F00", dot: "#FFB300" },
+  "Promo Products":  { bg: "#F1F8E9", border: "#7CB342", text: "#33691E", dot: "#7CB342" },
+};
+function deptColor(dept) {
+  return DEPT_COLORS[dept] || { bg: "#F3F4F6", border: "#9CA3AF", text: "#374151", dot: "#9CA3AF" };
+}
+function deptBadge(dept) {
+  const c = deptColor(dept);
+  return `<span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${c.bg};color:${c.text};border:1px solid ${c.border}">${dept||"General"}</span>`;
+}
+
 let allItems = [];
 let sortCol = "name", sortDir = 1;
 let adminKey = localStorage.getItem("supply_admin_key") || "";
@@ -331,6 +353,7 @@ function showPage(name, btn) {
   else document.getElementById("nav-"+name) && document.getElementById("nav-"+name).classList.add("active");
   if(name === "queue") renderQueue();
   if(name === "admin") initAdmin();
+  if(name === "full") renderFullInventory();
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────
@@ -352,77 +375,155 @@ function updateBadge() {
   badge.style.display = n > 0 ? "" : "none";
 }
 
-// ── Inventory render ──────────────────────────────────────────────────────
+// ── Needs Ordering view (dashboard) ──────────────────────────────────────
 function renderInventory() {
-  const search  = document.getElementById("search").value.toLowerCase();
-  const dept    = document.getElementById("filter-dept").value;
-  const status  = document.getElementById("filter-status").value;
-  const supplier= document.getElementById("filter-supplier").value;
-
-  let items = allItems.filter(i => {
-    if(search && !i.name.toLowerCase().includes(search) && !i.supplier?.toLowerCase().includes(search) && !i.category?.toLowerCase().includes(search)) return false;
-    if(dept && i.department !== dept) return false;
-    if(status && i.status !== status) return false;
-    if(supplier && i.supplier !== supplier) return false;
-    return true;
-  });
-
-  items.sort((a,b) => {
-    let av = a[sortCol]||"", bv = b[sortCol]||"";
-    if(typeof av === "number") return (av-bv)*sortDir;
-    return String(av).localeCompare(String(bv))*sortDir;
-  });
-
-  // Stats
   const needOrder = allItems.filter(i=>i.status==="Needs Ordered").length;
   const ordered   = allItems.filter(i=>i.status==="Ordered").length;
-  const totalVal  = allItems.reduce((s,i)=>s+(i.currentPrice||0),0);
+
   document.getElementById("inv-stats").innerHTML = `
     <div class="stat"><div class="stat-lbl">Total Items</div><div class="stat-val">${allItems.length}</div><div class="stat-sub">across all departments</div></div>
     <div class="stat"><div class="stat-lbl">Needs Ordered</div><div class="stat-val" style="color:#DC2626">${needOrder}</div><div class="stat-sub">flagged for reorder</div></div>
     <div class="stat"><div class="stat-lbl">On Order</div><div class="stat-val" style="color:#D97706">${ordered}</div><div class="stat-sub">awaiting arrival</div></div>
-    <div class="stat"><div class="stat-lbl">Showing</div><div class="stat-val">${items.length}</div><div class="stat-sub">of ${allItems.length} items</div></div>
+    <div class="stat"><div class="stat-lbl">In Stock</div><div class="stat-val" style="color:#3D9A5C">${allItems.length - needOrder - ordered}</div><div class="stat-sub">all good</div></div>
   `;
-  document.getElementById("inv-sub").textContent = `${allItems.length} items · ${needOrder} need ordering`;
+  document.getElementById("inv-sub").textContent = `${needOrder} items need ordering · ${ordered} on order`;
 
-  document.getElementById("inv-table").innerHTML = items.length ? items.map(item => `
-    <tr>
-      <td>
-        <div style="font-weight:600">${item.name}</div>
-        ${item.category?`<div style="font-size:11px;color:#9CA3AF">${item.category}</div>`:""}
-      </td>
-      <td style="color:#6B7280">${item.department||"—"}</td>
-      <td>
-        <div>${item.supplier||"—"}</div>
-        ${item.supplierLink?`<a href="${item.supplierLink}" target="_blank" style="font-size:11px;color:#3D9A5C;text-decoration:none">View →</a>`:""}
-      </td>
-      <td style="font-weight:600">$${(item.currentPrice||0).toFixed(2)}</td>
-      <td style="color:#6B7280">${item.unit||"—"}</td>
-      <td><span class="status ${statusClass(item.status)}">${statusDot(item.status)} ${item.status||"In Stock"}</span></td>
-      <td style="color:#6B7280">${item.lastOrdered?new Date(item.lastOrdered).toLocaleDateString():"Never"}</td>
-      <td style="text-align:center">${item.timesOrderedYTD||0}</td>
-      <td>
-        <div style="display:flex;gap:4px">
-          <button class="btn btn-gray btn-sm" onclick="viewItem('${item.id}')">View</button>
-          <button class="btn btn-gray btn-sm" onclick="showQR('${item.id}')">QR</button>
-          <button class="btn btn-gray btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
+  const needItems = allItems.filter(i=>i.status==="Needs Ordered"||i.status==="Ordered");
+  const el = document.getElementById("needs-ordering-list");
+
+  if(!needItems.length) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 24px;background:#fff;border-radius:10px;border:1px solid #E5E7EB">
+      <div style="font-size:48px;margin-bottom:12px">✅</div>
+      <div style="font-size:18px;font-weight:600;margin-bottom:6px">All stocked up!</div>
+      <div style="font-size:14px;color:#6B7280">No items need ordering right now.</div>
+    </div>`;
+    return;
+  }
+
+  // Group by department
+  const depts = [...new Set(needItems.map(i=>i.department||"General"))].sort();
+  el.innerHTML = depts.map(dept => {
+    const c = deptColor(dept);
+    const deptItems = needItems.filter(i=>(i.department||"General")===dept);
+    return `<div class="dept-section" style="border-color:${c.border}">
+      <div class="dept-header" style="background:${c.bg};color:${c.text}" onclick="toggleDept(this)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${c.dot};display:inline-block;flex-shrink:0"></span>
+          ${dept}
+          <span class="dept-count">${deptItems.length} item${deptItems.length!==1?"s":""}</span>
         </div>
-      </td>
-    </tr>
-  `).join("") : `<tr><td colspan="9" class="empty"><div class="empty-icon">📦</div><p>No items found</p></td></tr>`;
+        <span class="dept-toggle">▼</span>
+      </div>
+      <div class="dept-body">
+        ${deptItems.map(item=>`
+          <div class="order-card">
+            <div style="font-size:24px">${item.status==="Needs Ordered"?"🔴":"🟡"}</div>
+            <div class="order-card-info">
+              <div class="order-card-name">${item.name}</div>
+              <div class="order-card-meta">${item.supplier||"No supplier"} · ${item.unit||""} ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")?`· <a href="${item.supplierLink}" target="_blank" style="color:#3D9A5C">Order →</a>`:""}</div>
+            </div>
+            <div class="order-card-price">$${(item.currentPrice||0).toFixed(2)}</div>
+            <div class="order-card-actions">
+              ${item.status==="Needs Ordered"?`<button class="btn btn-amber btn-sm" onclick="updateStatus('${item.id}','Ordered')">Mark Ordered</button>`:""}
+              <button class="btn btn-green btn-sm" onclick="updateStatus('${item.id}','In Stock')">✓ Arrived</button>
+              <button class="btn btn-gray btn-sm" onclick="viewItem('${item.id}')">Details</button>
+            </div>
+          </div>`).join("")}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── Full Inventory view (by department, collapsible) ───────────────────────
+function renderFullInventory() {
+  const search   = (document.getElementById("full-search")?.value||"").toLowerCase();
+  const supplier = document.getElementById("full-filter-supplier")?.value||"";
+
+  let items = allItems.filter(i => {
+    if(search && !i.name.toLowerCase().includes(search) &&
+       !(i.supplier||"").toLowerCase().includes(search) &&
+       !(i.category||"").toLowerCase().includes(search)) return false;
+    if(supplier && i.supplier !== supplier) return false;
+    return true;
+  });
+
+  document.getElementById("full-sub").textContent = `${items.length} of ${allItems.length} items`;
+
+  const depts = [...new Set(items.map(i=>i.department||"General"))].sort();
+  const el = document.getElementById("full-inventory-list");
+
+  el.innerHTML = depts.map(dept => {
+    const c = deptColor(dept);
+    const deptItems = items.filter(i=>(i.department||"General")===dept)
+      .sort((a,b)=>a.name.localeCompare(b.name));
+    return `<div class="dept-section" style="border-color:${c.border}">
+      <div class="dept-header" style="background:${c.bg};color:${c.text}" onclick="toggleDept(this)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${c.dot};display:inline-block;flex-shrink:0"></span>
+          ${dept}
+          <span class="dept-count">${deptItems.length} item${deptItems.length!==1?"s":""}</span>
+        </div>
+        <span class="dept-toggle">▼</span>
+      </div>
+      <div class="dept-body">
+        <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Item</th>
+            <th>Supplier</th>
+            <th>Price</th>
+            <th>Unit</th>
+            <th>Status</th>
+            <th>Last Ordered</th>
+            <th>YTD</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody>
+            ${deptItems.map(item=>`<tr>
+              <td>
+                <div style="font-weight:600">${item.name}</div>
+                ${item.category?`<div style="font-size:11px;color:#9CA3AF">${item.category}</div>`:""}
+              </td>
+              <td>
+                <div>${item.supplier||"—"}</div>
+                ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" style="font-size:11px;color:#3D9A5C;text-decoration:none">View →</a>`:""}
+              </td>
+              <td style="font-weight:600">$${(item.currentPrice||0).toFixed(2)}</td>
+              <td style="color:#6B7280">${item.unit||"—"}</td>
+              <td><span class="status ${statusClass(item.status)}">${statusDot(item.status)} ${item.status||"In Stock"}</span></td>
+              <td style="color:#6B7280">${item.lastOrdered?new Date(item.lastOrdered).toLocaleDateString():"Never"}</td>
+              <td style="text-align:center">${item.timesOrderedYTD||0}</td>
+              <td>
+                <div style="display:flex;gap:4px">
+                  <button class="btn btn-gray btn-sm" onclick="viewItem('${item.id}')">View</button>
+                  <button class="btn btn-gray btn-sm" onclick="showQR('${item.id}')">QR</button>
+                  <button class="btn btn-gray btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
+                </div>
+              </td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function toggleDept(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector(".dept-toggle");
+  body.classList.toggle("hidden");
+  arrow.classList.toggle("collapsed");
 }
 
 function populateFilters() {
-  const depts = [...new Set(allItems.map(i=>i.department).filter(Boolean))].sort();
   const suppliers = [...new Set(allItems.map(i=>i.supplier).filter(Boolean))].sort();
-  const deptSel = document.getElementById("filter-dept");
-  const supSel  = document.getElementById("filter-supplier");
-  deptSel.innerHTML = `<option value="">All Departments</option>` + depts.map(d=>`<option>${d}</option>`).join("");
-  supSel.innerHTML  = `<option value="">All Suppliers</option>`  + suppliers.map(s=>`<option>${s}</option>`).join("");
+  const supSel = document.getElementById("full-filter-supplier");
+  if(supSel) supSel.innerHTML = `<option value="">All Suppliers</option>` + suppliers.map(s=>`<option>${s}</option>`).join("");
 }
 
 function filterItems() { renderInventory(); }
-function sortBy(col) { sortDir = sortCol===col ? -sortDir : 1; sortCol=col; renderInventory(); }
+function sortBy(col) { sortDir = sortCol===col ? -sortDir : 1; sortCol=col; renderFullInventory(); }
 
 function statusClass(s) {
   if(s==="Needs Ordered") return "s-need";
@@ -503,9 +604,17 @@ function viewItem(id) {
         <div style="font-size:32px;font-weight:700;color:#3D9A5C">$${(item.currentPrice||0).toFixed(2)}</div>
       </div>
       <div class="item-actions">
-        ${item.status!=="Needs Ordered"?`<button class="btn btn-red" onclick="flagItem('${item.id}')">🚨 Flag as Needs Ordered</button>`:`<span class="status s-need" style="font-size:14px;padding:8px 16px">🔴 Already flagged</span>`}
-        ${item.status==="Needs Ordered"?`<button class="btn btn-amber" onclick="updateStatus('${item.id}','Ordered')">Mark Ordered</button>`:""}
-        ${item.status==="Ordered"?`<button class="btn btn-green" onclick="updateStatus('${item.id}','In Stock')">✅ Mark Arrived</button>`:""}
+        ${item.status==="In Stock"?
+          `<button class="btn btn-red" style="font-size:16px;padding:12px 24px" onclick="flagItem('${item.id}')">🚨 Flag as Needs Ordered</button>`
+          :item.status==="Needs Ordered"?
+          `<div style="display:flex;flex-direction:column;gap:8px;width:100%">
+            <span class="status s-need" style="font-size:14px;padding:8px 16px;justify-content:center">🔴 Flagged — Needs Ordered</span>
+            <button class="btn btn-amber" style="font-size:15px;padding:11px 20px" onclick="updateStatus('${item.id}','Ordered')">📦 Mark as Ordered</button>
+          </div>`
+          :item.status==="Ordered"?
+          `<button class="btn btn-green" style="font-size:16px;padding:12px 24px" onclick="updateStatus('${item.id}','In Stock')">✅ Mark as Arrived — Back in Stock</button>`
+          :`<button class="btn btn-red" style="font-size:16px;padding:12px 24px" onclick="flagItem('${item.id}')">🚨 Flag as Needs Ordered</button>`
+        }
         ${item.supplierLink?`<a href="${item.supplierLink}" target="_blank" class="btn btn-gray">🔗 Supplier Page</a>`:""}
         <button class="btn btn-gray" onclick="openEditModal('${item.id}')">✏️ Edit</button>
         <button class="btn btn-gray" onclick="showQR('${item.id}')">📱 QR Code</button>
@@ -693,24 +802,61 @@ async function runScrape() {
 }
 
 async function importCSV(input) {
-  const file = input.files[0]; if(!file) return;
+  const file = input.files[0];
+  if(!file) { showToast("Please select a CSV file first", true); return; }
+  if(!adminKey) { showToast("Please save your admin key first", true); return; }
+
+  const statusEl = document.getElementById("import-status");
+  statusEl.textContent = "Reading file...";
+
   const text = await file.text();
   const lines = text.split("\n").filter(l=>l.trim());
+  if(lines.length < 2) { statusEl.textContent = "CSV appears empty"; return; }
+
   const headers = lines[0].split(",").map(h=>h.trim().toLowerCase().replace(/"/g,""));
-  let imported = 0, failed = 0;
+  statusEl.textContent = `Found ${lines.length-1} rows, importing...`;
+
+  let imported = 0, failed = 0, skipped = 0;
   for(let i=1;i<lines.length;i++) {
-    const vals = lines[i].split(",").map(v=>v.trim().replace(/^"|"$/g,""));
+    // Handle quoted CSV values properly
+    const vals = [];
+    let cur = "", inQ = false;
+    for(const ch of lines[i]) {
+      if(ch==='"') { inQ=!inQ; }
+      else if(ch===','&&!inQ) { vals.push(cur.trim()); cur=""; }
+      else cur+=ch;
+    }
+    vals.push(cur.trim());
+
     const obj = {};
-    headers.forEach((h,j)=>obj[h]=vals[j]||"");
-    if(!obj.name) continue;
+    headers.forEach((h,j)=>obj[h]=(vals[j]||"").replace(/^"|"$/g,""));
+    if(!obj.name) { skipped++; continue; }
+
     try {
-      const r = await fetch(API, { method:"POST", headers:{"Content-Type":"application/json","x-admin-key":adminKey}, body:JSON.stringify(obj) });
-      if(r.ok){ imported++; const item=await r.json(); allItems.push(item); }
-      else failed++;
-    } catch(e){ failed++; }
-    await new Promise(r=>setTimeout(r,100));
+      const r = await fetch(API, {
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-admin-key":adminKey},
+        body:JSON.stringify(obj)
+      });
+      if(r.ok){
+        imported++;
+        const item=await r.json();
+        allItems.push(item);
+        statusEl.textContent = `Importing... ${imported} done`;
+      } else {
+        const err = await r.json().catch(()=>({}));
+        console.error("Failed row", i, err);
+        failed++;
+      }
+    } catch(e){
+      console.error("Error row", i, e);
+      failed++;
+    }
+    await new Promise(r=>setTimeout(r,150));
   }
-  document.getElementById("import-status").textContent = `Imported ${imported}, failed ${failed}`;
+
+  statusEl.textContent = `Done — ${imported} imported, ${failed} failed, ${skipped} skipped`;
+  showToast(`Imported ${imported} items`);
   renderInventory(); populateFilters(); updateBadge();
 }
 
