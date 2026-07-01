@@ -69,7 +69,7 @@ export default async function handler(req, res) {
       unit: body.unit || "",
       currentPrice: parseFloat(body.currentPrice) || 0,
       priceHistory: body.currentPrice ? [{ price: parseFloat(body.currentPrice), supplier: body.supplier, date: new Date().toISOString() }] : [],
-      status: "In Stock",
+      status: body.status || "In Stock",
       lastOrdered: null,
       timesOrderedYTD: 0,
       notes: body.notes || "",
