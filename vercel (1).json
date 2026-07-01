@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "functions": {
+    "api/items.js":  { "runtime": "nodejs20.x" },
+    "api/scrape.js": { "runtime": "nodejs20.x", "maxDuration": 300 }
+  },
+  "rewrites": [
+    { "source": "/item/:id", "destination": "/index.html" },
+    { "source": "/queue",    "destination": "/index.html" },
+    { "source": "/settings", "destination": "/index.html" }
+  ]
+}
