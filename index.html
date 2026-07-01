@@ -216,8 +216,9 @@ tr:hover td{background:#F9FAFB}
       <div style="padding:16px">
         <div class="field">
           <label>Admin Key</label>
-          <input type="password" id="admin-key-input" placeholder="Enter admin key" oninput="saveAdminKey()"/>
+          <input type="password" id="admin-key-input" placeholder="Enter admin key"/>
         </div>
+        <button class="btn btn-green" onclick="saveAdminKey()" style="margin-bottom:10px">Save Admin Key</button>
         <div style="font-size:12px;color:#6B7280">The admin key is set in your Vercel environment variables as ADMIN_KEY. Enter it here to unlock admin features.</div>
         <div style="margin-top:10px;font-size:13px;font-weight:600" id="admin-status"></div>
       </div>
@@ -234,8 +235,9 @@ tr:hover td{background:#F9FAFB}
       <div class="card-hd"><h3>Import from CSV</h3></div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:13px;color:#6B7280">Upload a CSV to bulk-import items. Columns: name, department, category, supplier, supplierLink, unit, currentPrice, notes</div>
-        <input type="file" id="csv-input" accept=".csv" onchange="importCSV(this)"/>
-        <div style="font-size:12px;color:#9CA3AF" id="import-status"></div>
+        <input type="file" id="csv-input" accept=".csv"/>
+        <button class="btn btn-green" onclick="importCSV(document.getElementById('csv-input'))" style="margin-top:8px">Import CSV</button>
+        <div style="font-size:12px;color:#9CA3AF;margin-top:8px" id="import-status"></div>
       </div>
     </div>
     <div class="card">
