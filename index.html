@@ -466,34 +466,35 @@ function renderInventory() {
     return;
   }
 
-  // Group by department
-  const depts = [...new Set(needItems.map(i=>i.department||"General"))].sort();
-  el.innerHTML = depts.map(dept => {
-    const c = deptColor(dept);
-    const deptItems = needItems.filter(i=>(i.department||"General")===dept);
-    return `<div class="dept-section" style="border-color:${c.border}">
-      <div class="dept-header" style="background:${c.bg};color:${c.text}" onclick="toggleDept(this)">
+  // Two sections: Needs Ordered first, then On Order
+  const sections = [
+    { label:"Needs Ordered", color:"#DC2626", bg:"#FEF2F2", border:"#FECACA", items: needItems.filter(i=>i.status==="Needs Ordered") },
+    { label:"On Order",      color:"#D97706", bg:"#FFFBEB", border:"#FDE68A", items: needItems.filter(i=>i.status==="Ordered") },
+  ].filter(s=>s.items.length>0);
+
+  el.innerHTML = sections.map(sec=>`
+    <div class="dept-section" style="border-color:${sec.border};margin-bottom:16px">
+      <div class="dept-header" style="background:${sec.bg};color:${sec.color}" onclick="toggleDept(this)">
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="width:10px;height:10px;border-radius:50%;background:${c.dot};display:inline-block;flex-shrink:0"></span>
-          ${dept}
-          <span class="dept-count">${deptItems.length} item${deptItems.length!==1?"s":""}</span>
+          <span style="width:10px;height:10px;border-radius:50%;background:${sec.color};display:inline-block;flex-shrink:0"></span>
+          ${sec.label}
+          <span class="dept-count" style="color:${sec.color}">${sec.items.length} item${sec.items.length!==1?"s":""}</span>
         </div>
         <span class="dept-toggle">▼</span>
       </div>
       <div class="dept-body">
-        ${deptItems.map(item=>`
+        ${sec.items.map(item=>`
           <div class="order-card">
-            <div style="font-size:24px">${item.status==="Needs Ordered"?"🔴":"🟡"}</div>
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sec.color};flex-shrink:0;margin-top:4px"></span>
             <div class="order-card-info">
-              <div class="order-card-name">${item.name}</div>
-              <div class="order-card-meta">${item.supplier||"No supplier"} · ${item.unit||""}</div>
-            ${item.supplierLink&&(item.supplierLink.startsWith("email")||item.supplierLink.startsWith("EMAIL"))?`<div style="font-size:11px;color:#6B7280;margin-top:2px">📧 ${item.supplierLink.replace(/^email\s*/i,"")}</div>`:""} 
+              <div class="order-card-name" style="cursor:pointer;color:#3D9A5C" onclick="viewItem('${item.id}')">${item.name}</div>
+              <div class="order-card-meta">${item.department||""} · ${item.supplier||"No supplier"} · ${item.unit||""}</div>
             </div>
             <div class="order-card-price">$${(item.currentPrice||0).toFixed(2)}</div>
             <div class="order-card-actions">
               ${item.supplierLink&&!item.supplierLink.startsWith("email")&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" class="btn btn-gray btn-sm" style="text-decoration:none">🛒 Order</a>`:""}
               <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:5px 8px;font-size:12px;cursor:pointer;outline:none">
-                <option value="In Stock" ${(item.status||"In Stock")==="In Stock"?"selected":""}>In Stock</option>
+                <option value="In Stock">In Stock</option>
                 <option value="Needs Ordered" ${item.status==="Needs Ordered"?"selected":""}>Needs Ordered</option>
                 <option value="Ordered" ${item.status==="Ordered"?"selected":""}>Ordered</option>
                 <option value="Issue" ${item.status==="Issue"?"selected":""}>Issue</option>
@@ -501,8 +502,7 @@ function renderInventory() {
             </div>
           </div>`).join("")}
       </div>
-    </div>`;
-  }).join("");
+    </div>`).join("");
 }
 
 // ── Full Inventory view (by department, collapsible) ───────────────────────
