@@ -533,27 +533,27 @@ function renderFullInventory() {
       </div>
       <div class="dept-body">
         <div class="tbl-wrap">
-        <table>
+        <table style="table-layout:fixed;width:100%">
           <thead><tr>
             <th style="width:32px"><input type="checkbox" onclick="toggleAllChecks(this)" title="Select all"/></th>
-            <th>Item</th>
-            <th>Supplier</th>
-            <th>Price</th>
-            <th>Unit</th>
-            <th>Status</th>
-            <th>Last Ordered</th>
-            <th>YTD</th>
-            <th>Actions</th>
+            <th style="width:30%">Item</th>
+            <th style="width:12%">Supplier</th>
+            <th style="width:8%">Price</th>
+            <th style="width:12%">Unit</th>
+            <th style="width:12%">Status</th>
+            <th style="width:10%">Last Ordered</th>
+            <th style="width:5%">YTD</th>
+            <th style="width:11%">Actions</th>
           </tr></thead>
           <tbody>
             ${deptItems.map(item=>`<tr>
               <td><input type="checkbox" class="bulk-check" data-id="${item.id}"/></td>
-              <td>
-                <div style="font-weight:600">${item.name}</div>
+              <td style="overflow:hidden">
+                <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name}</div>
                 ${item.category?`<div style="font-size:11px;color:#9CA3AF">${item.category}</div>`:""}
               </td>
-              <td>
-                <div>${item.supplier||"—"}</div>
+              <td style="overflow:hidden">
+                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.supplier||"—"}</div>
                 ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" style="font-size:11px;color:#3D9A5C;text-decoration:none">View →</a>`:""}
               </td>
               <td style="font-weight:600">$${(item.currentPrice||0).toFixed(2)}</td>
