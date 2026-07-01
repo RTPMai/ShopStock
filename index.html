@@ -486,10 +486,12 @@ function renderInventory() {
             <div style="font-size:24px">${item.status==="Needs Ordered"?"🔴":"🟡"}</div>
             <div class="order-card-info">
               <div class="order-card-name">${item.name}</div>
-              <div class="order-card-meta">${item.supplier||"No supplier"} · ${item.unit||""} ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")?`· <a href="${item.supplierLink}" target="_blank" style="color:#3D9A5C">Order →</a>`:""}</div>
+              <div class="order-card-meta">${item.supplier||"No supplier"} · ${item.unit||""}</div>
+            ${item.supplierLink&&(item.supplierLink.startsWith("email")||item.supplierLink.startsWith("EMAIL"))?`<div style="font-size:11px;color:#6B7280;margin-top:2px">📧 ${item.supplierLink.replace(/^email\s*/i,"")}</div>`:""} 
             </div>
             <div class="order-card-price">$${(item.currentPrice||0).toFixed(2)}</div>
             <div class="order-card-actions">
+              ${item.supplierLink&&!item.supplierLink.startsWith("email")&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" class="btn btn-gray btn-sm" style="text-decoration:none">🛒 Order</a>`:""}
               ${item.status==="Needs Ordered"?`<button class="btn btn-amber btn-sm" onclick="updateStatus('${item.id}','Ordered')">Mark Ordered</button>`:""}
               <button class="btn btn-green btn-sm" onclick="updateStatus('${item.id}','In Stock')">✓ Arrived</button>
               <button class="btn btn-gray btn-sm" onclick="viewItem('${item.id}')">Details</button>
@@ -553,8 +555,8 @@ function renderFullInventory() {
                 ${item.category?`<div style="font-size:11px;color:#9CA3AF">${item.category}</div>`:""}
               </td>
               <td style="overflow:hidden">
-                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.supplier||"—"}</div>
-                ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" style="font-size:11px;color:#3D9A5C;text-decoration:none">View →</a>`:""}
+                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px">${item.supplier||"—"}</div>
+                ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")&&!item.supplierLink.startsWith("email")?`<a href="${item.supplierLink}" target="_blank" style="display:inline-block;padding:2px 8px;background:#EAF5EE;color:#3D9A5C;border:1px solid #BBF7D0;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none">🛒 Order</a>`:item.supplierLink?`<span style="font-size:11px;color:#9CA3AF">📧 Email order</span>`:""}
               </td>
               <td style="font-weight:600">$${(item.currentPrice||0).toFixed(2)}</td>
               <td style="color:#6B7280">${item.unit||"—"}</td>
@@ -686,7 +688,7 @@ function viewItem(id) {
           `<button class="btn btn-green" style="font-size:16px;padding:12px 24px" onclick="updateStatus('${item.id}','In Stock')">✅ Mark as Arrived — Back in Stock</button>`
           :`<button class="btn btn-red" style="font-size:16px;padding:12px 24px" onclick="flagItem('${item.id}')">🚨 Flag as Needs Ordered</button>`
         }
-        ${item.supplierLink?`<a href="${item.supplierLink}" target="_blank" class="btn btn-gray">🔗 Supplier Page</a>`:""}
+        ${item.supplierLink&&!item.supplierLink.startsWith("email")&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" class="btn btn-green" style="text-decoration:none">🛒 Place Order</a>`:item.supplierLink?`<span class="btn btn-gray" style="cursor:default">📧 ${item.supplierLink}</span>`:""}
         <button class="btn btn-gray" onclick="openEditModal('${item.id}')">✏️ Edit</button>
         <button class="btn btn-gray" onclick="showQR('${item.id}')">📱 QR Code</button>
       </div>
