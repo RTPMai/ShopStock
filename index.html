@@ -492,9 +492,12 @@ function renderInventory() {
             <div class="order-card-price">$${(item.currentPrice||0).toFixed(2)}</div>
             <div class="order-card-actions">
               ${item.supplierLink&&!item.supplierLink.startsWith("email")&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" class="btn btn-gray btn-sm" style="text-decoration:none">🛒 Order</a>`:""}
-              ${item.status==="Needs Ordered"?`<button class="btn btn-amber btn-sm" onclick="updateStatus('${item.id}','Ordered')">Mark Ordered</button>`:""}
-              <button class="btn btn-green btn-sm" onclick="updateStatus('${item.id}','In Stock')">✓ Arrived</button>
-              <button class="btn btn-gray btn-sm" onclick="viewItem('${item.id}')">Details</button>
+              <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:5px 8px;font-size:12px;cursor:pointer;outline:none">
+                <option value="In Stock" ${(item.status||"In Stock")==="In Stock"?"selected":""}>🟢 In Stock</option>
+                <option value="Needs Ordered" ${item.status==="Needs Ordered"?"selected":""}>🔴 Needs Ordered</option>
+                <option value="Ordered" ${item.status==="Ordered"?"selected":""}>🟡 Ordered</option>
+                <option value="Arrived" ${item.status==="Arrived"?"selected":""}>🔵 Arrived</option>
+              </select>
             </div>
           </div>`).join("")}
       </div>
@@ -550,8 +553,8 @@ function renderFullInventory() {
           <tbody>
             ${deptItems.map(item=>`<tr>
               <td><input type="checkbox" class="bulk-check" data-id="${item.id}"/></td>
-              <td style="overflow:hidden">
-                <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name}</div>
+              <td style="overflow:hidden;cursor:pointer" onclick="viewItem('${item.id}')">
+                <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3D9A5C">${item.name}</div>
                 ${item.category?`<div style="font-size:11px;color:#9CA3AF">${item.category}</div>`:""}
               </td>
               <td style="overflow:hidden">
@@ -560,12 +563,18 @@ function renderFullInventory() {
               </td>
               <td style="font-weight:600">$${(item.currentPrice||0).toFixed(2)}</td>
               <td style="color:#6B7280">${item.unit||"—"}</td>
-              <td><span class="status ${statusClass(item.status)}">${statusDot(item.status)} ${item.status||"In Stock"}</span></td>
+              <td>
+                <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:4px 6px;font-size:12px;cursor:pointer;outline:none">
+                  <option value="In Stock" ${(item.status||"In Stock")==="In Stock"?"selected":""}>🟢 In Stock</option>
+                  <option value="Needs Ordered" ${item.status==="Needs Ordered"?"selected":""}>🔴 Needs Ordered</option>
+                  <option value="Ordered" ${item.status==="Ordered"?"selected":""}>🟡 Ordered</option>
+                  <option value="Arrived" ${item.status==="Arrived"?"selected":""}>🔵 Arrived</option>
+                </select>
+              </td>
               <td style="color:#6B7280">${item.lastOrdered?new Date(item.lastOrdered).toLocaleDateString():"Never"}</td>
               <td style="text-align:center">${item.timesOrderedYTD||0}</td>
               <td>
                 <div style="display:flex;gap:4px">
-                  <button class="btn btn-gray btn-sm" onclick="viewItem('${item.id}')">View</button>
                   <button class="btn btn-gray btn-sm" onclick="showQR('${item.id}')">QR</button>
                   <button class="btn btn-gray btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
                 </div>
@@ -699,6 +708,11 @@ function viewItem(id) {
         <h4>Item Details</h4>
         <div class="info-row"><span class="lbl">Unit</span><span class="val">${item.unit||"—"}</span></div>
         <div class="info-row"><span class="lbl">Supplier</span><span class="val">${item.supplier||"—"}</span></div>
+        <div class="info-row"><span class="lbl">Supplier Link</span><span class="val" style="max-width:200px;overflow:hidden;text-overflow:ellipsis">
+          ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")&&!item.supplierLink.startsWith("email")
+            ?`<a href="${item.supplierLink}" target="_blank" style="color:#3D9A5C;word-break:break-all">${item.supplierLink}</a>`
+            :item.supplierLink?item.supplierLink:"—"}
+        </span></div>
         <div class="info-row"><span class="lbl">Last Ordered</span><span class="val">${item.lastOrdered?new Date(item.lastOrdered).toLocaleDateString():"Never"}</span></div>
         <div class="info-row"><span class="lbl">Times Ordered YTD</span><span class="val">${item.timesOrderedYTD||0}</span></div>
         <div class="info-row"><span class="lbl">Last Scraped</span><span class="val">${item.lastScraped?new Date(item.lastScraped).toLocaleDateString():"Never"}</span></div>
