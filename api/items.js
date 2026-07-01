@@ -102,7 +102,7 @@ export default async function handler(req, res) {
         await notifyAdmin(item);
         return res.status(200).json(item);
       }
-      if(body.action === "arrived") {
+      if(body.action === "issue") {
         item.status = "In Stock";
         item.lastOrdered = new Date().toISOString();
         item.timesOrderedYTD = (item.timesOrderedYTD || 0) + 1;
