@@ -1088,10 +1088,12 @@ async function importCSV(input) {
   statusEl.textContent = "Reading file...";
 
   const text = await file.text();
-  const lines = text.split("\n").filter(l=>l.trim());
+  // Handle both Windows (\r\n) and Unix (\n) line endings
+  const lines = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n").filter(l=>l.trim());
   if(lines.length < 2) { statusEl.textContent = "CSV appears empty"; return; }
 
-  const headers = lines[0].split(",").map(h=>h.trim().toLowerCase().replace(/"/g,""));
+  // Parse header using same RFC 4180 parser
+  const headers = parseCSVLine(lines[0]).map(h=>h.toLowerCase().trim());
   statusEl.textContent = `Found ${lines.length-1} rows, importing...`;
 
   // Proper RFC 4180 CSV parser
