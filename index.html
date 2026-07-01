@@ -185,11 +185,12 @@ tr:hover td{background:#F9FAFB}
       <div style="font-size:22px;font-weight:700">Full Inventory</div>
       <div style="font-size:13px;color:#6B7280;margin-top:2px" id="full-sub"></div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input class="search-input" id="full-search" placeholder="Search items..." oninput="renderFullInventory()"/>
       <select class="filter-select" id="full-filter-supplier" onchange="renderFullInventory()">
         <option value="">All Suppliers</option>
       </select>
+      <button class="btn btn-gray" onclick="bulkPrintQR()" title="Print QR codes for checked items, or all items if none checked">🖨️ Print QR Codes</button>
       <button class="btn btn-green" onclick="openAddModal()">+ Add Item</button>
     </div>
   </div>
@@ -344,11 +345,32 @@ const DEFAULT_DEPT_COLORS = {
 };
 const DEFAULT_CATEGORIES = ["Inks","Chemicals","Tools","Tape","Emulsion","Thread","Stabilizer","Consumables","Safety","Packaging","Paper","Electronics","Pens & Markers","Cleaning","Vinyl"];
 
-function getDeptColors() {
-  return JSON.parse(localStorage.getItem("ss_dept_colors") || JSON.stringify(DEFAULT_DEPT_COLORS));
+// In-memory settings — loaded from Upstash on startup
+let _deptColors = {...DEFAULT_DEPT_COLORS};
+let _categories = [...DEFAULT_CATEGORIES];
+
+function getDeptColors() { return _deptColors; }
+function getCategories() { return _categories; }
+
+async function loadSettings() {
+  try {
+    const r = await fetch("/api/settings");
+    if(r.ok) {
+      const s = await r.json();
+      if(s.deptColors) _deptColors = s.deptColors;
+      if(s.categories) _categories = s.categories;
+    }
+  } catch(e) { console.warn("Could not load settings", e); }
 }
-function getCategories() {
-  return JSON.parse(localStorage.getItem("ss_categories") || JSON.stringify(DEFAULT_CATEGORIES));
+
+async function saveSettings() {
+  try {
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+      body: JSON.stringify({ deptColors: _deptColors, categories: _categories })
+    });
+  } catch(e) { console.warn("Could not save settings", e); }
 }
 function hexToRgb(hex) {
   const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
@@ -402,6 +424,7 @@ function showPage(name, btn) {
 // ── Data ──────────────────────────────────────────────────────────────────
 async function loadItems() {
   try {
+    await loadSettings();
     const r = await fetch(API);
     allItems = await r.json();
     if(!Array.isArray(allItems)) allItems = [];
@@ -512,6 +535,7 @@ function renderFullInventory() {
         <div class="tbl-wrap">
         <table>
           <thead><tr>
+            <th style="width:32px"><input type="checkbox" onclick="toggleAllChecks(this)" title="Select all"/></th>
             <th>Item</th>
             <th>Supplier</th>
             <th>Price</th>
@@ -523,6 +547,7 @@ function renderFullInventory() {
           </tr></thead>
           <tbody>
             ${deptItems.map(item=>`<tr>
+              <td><input type="checkbox" class="bulk-check" data-id="${item.id}"/></td>
               <td>
                 <div style="font-weight:600">${item.name}</div>
                 ${item.category?`<div style="font-size:11px;color:#9CA3AF">${item.category}</div>`:""}
@@ -566,6 +591,9 @@ function populateFilters() {
 }
 
 function filterItems() { renderInventory(); }
+function toggleAllChecks(master) {
+  document.querySelectorAll(".bulk-check").forEach(c=>c.checked=master.checked);
+}
 function sortBy(col) { sortDir = sortCol===col ? -sortDir : 1; sortCol=col; renderFullInventory(); }
 
 function statusClass(s) {
@@ -808,6 +836,30 @@ function closeQRModal(e) {
   }
 }
 
+function getQRDataUrl(id) {
+  // Generate a fresh QR canvas for any item by id
+  const url = `${window.location.origin}/item/${id}`;
+  const div = document.createElement("div");
+  div.style.display = "none";
+  document.body.appendChild(div);
+  new QRCode(div, { text: url, width: 200, height: 200, colorDark: "#000000", colorLight: "#ffffff" });
+  const canvas = div.querySelector("canvas");
+  const dataUrl = canvas ? canvas.toDataURL() : null;
+  document.body.removeChild(div);
+  return { dataUrl, url };
+}
+
+function buildLabelHTML(item) {
+  const { dataUrl, url } = getQRDataUrl(item.id);
+  if(!dataUrl) return "";
+  return `<div class="label">
+    <div class="dept">${item.department||""}</div>
+    <div class="item-name">${item.name}</div>
+    <img src="${dataUrl}" class="qr-img"/>
+    <div class="scan-text">Scan to update status</div>
+  </div>`;
+}
+
 function printQR() {
   const canvas = document.querySelector("#qr-code canvas");
   const title  = document.getElementById("qr-title").textContent;
@@ -815,30 +867,68 @@ function printQR() {
   if(!canvas) return;
   const item = allItems.find(i=>url.includes(i.id));
   const dept = item ? (item.department||"") : "";
-  const c = item ? deptColor(dept) : { bg:"#F3F4F6", border:"#9CA3AF", text:"#374151" };
   const w = window.open("","_blank");
   w.document.write(`<!DOCTYPE html><html><head>
     <style>
-      @media print { body { margin:0; } .no-print { display:none; } }
-      body { font-family: 'Arial', sans-serif; text-align:center; padding:20px; background:#fff; }
-      .label { display:inline-block; border:2px solid ${c.border}; border-radius:12px; padding:20px 24px; max-width:280px; background:${c.bg}; }
-      .dept { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:${c.text}; margin-bottom:8px; }
-      .item-name { font-size:16px; font-weight:700; color:#111827; margin-bottom:12px; line-height:1.3; }
-      .qr-img { display:block; margin:0 auto 10px; width:180px; height:180px; }
-      .scan-text { font-size:12px; color:#6B7280; margin-bottom:4px; }
-      .url-text { font-size:9px; color:#9CA3AF; word-break:break-all; }
-      .print-btn { margin-top:20px; padding:10px 24px; background:#3D9A5C; color:#fff; border:none; border-radius:6px; font-size:14px; cursor:pointer; }
+      @page { margin: 4mm; }
+      @media print { .no-print { display:none; } }
+      * { box-sizing: border-box; }
+      body { font-family: Arial, sans-serif; text-align:center; margin:0; padding:12px; background:#fff; color:#000; }
+      .label { display:inline-block; border:2px solid #000; border-radius:6px; padding:14px 18px; max-width:260px; width:100%; }
+      .dept { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#000; margin-bottom:6px; border-bottom:1px solid #000; padding-bottom:6px; }
+      .item-name { font-size:15px; font-weight:700; color:#000; margin:8px 0 10px; line-height:1.3; }
+      .qr-img { display:block; margin:0 auto 8px; width:180px; height:180px; }
+      .scan-text { font-size:11px; color:#000; }
+      .print-btn { margin-top:16px; padding:10px 24px; background:#000; color:#fff; border:none; border-radius:6px; font-size:14px; cursor:pointer; font-weight:600; }
     </style>
   </head><body>
     <div class="label">
       <div class="dept">${dept}</div>
       <div class="item-name">${title}</div>
       <img src="${canvas.toDataURL()}" class="qr-img"/>
-      <div class="scan-text">📱 Scan to update status</div>
-      <div class="url-text">${url}</div>
+      <div class="scan-text">Scan to update status</div>
     </div>
     <br/>
-    <button class="print-btn no-print" onclick="window.print();window.close()">🖨️ Print</button>
+    <button class="print-btn no-print" onclick="window.print();window.close()">Print</button>
+  </body></html>`);
+  w.document.close();
+}
+
+function bulkPrintQR() {
+  // Get all checked items, or all items if none checked
+  const checked = [...document.querySelectorAll(".bulk-check:checked")].map(c=>c.dataset.id);
+  const items = checked.length > 0
+    ? allItems.filter(i=>checked.includes(i.id))
+    : allItems;
+
+  if(!items.length) { showToast("No items to print", true); return; }
+
+  // Build all labels
+  const labels = items.map(item => buildLabelHTML(item)).filter(Boolean);
+
+  const w = window.open("","_blank");
+  w.document.write(`<!DOCTYPE html><html><head>
+    <style>
+      @page { margin: 4mm; }
+      @media print { .no-print { display:none; } }
+      * { box-sizing: border-box; }
+      body { font-family: Arial, sans-serif; margin:0; padding:8px; background:#fff; color:#000; }
+      .grid { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-start; }
+      .label { border:2px solid #000; border-radius:6px; padding:10px 12px; width:200px; text-align:center; page-break-inside:avoid; }
+      .dept { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid #000; padding-bottom:4px; margin-bottom:4px; }
+      .item-name { font-size:12px; font-weight:700; margin:4px 0 6px; line-height:1.2; min-height:30px; display:flex; align-items:center; justify-content:center; }
+      .qr-img { display:block; margin:0 auto 4px; width:150px; height:150px; }
+      .scan-text { font-size:9px; }
+      .controls { padding:12px; display:flex; gap:10px; align-items:center; }
+      .print-btn { padding:10px 24px; background:#000; color:#fff; border:none; border-radius:6px; font-size:14px; cursor:pointer; font-weight:600; }
+      .count { font-size:13px; color:#666; }
+    </style>
+  </head><body>
+    <div class="controls no-print">
+      <button class="print-btn" onclick="window.print()">Print All ${items.length} Labels</button>
+      <span class="count">${items.length} QR codes ready</span>
+    </div>
+    <div class="grid">${labels.join("")}</div>
   </body></html>`);
   w.document.close();
 }
@@ -888,7 +978,7 @@ function addDepartment() {
   if(!name) return;
   const colors = getDeptColors();
   colors[name] = color;
-  localStorage.setItem("ss_dept_colors", JSON.stringify(colors));
+  _deptColors = colors; saveSettings();
   document.getElementById("new-dept-name").value = "";
   renderDeptList();
   // Update dept dropdowns in add/edit modal
@@ -899,7 +989,7 @@ function addDepartment() {
 function updateDeptColor(dept, hex) {
   const colors = getDeptColors();
   colors[dept] = hex;
-  localStorage.setItem("ss_dept_colors", JSON.stringify(colors));
+  _deptColors = colors; saveSettings();
   renderInventory();
   renderFullInventory();
 }
@@ -908,7 +998,7 @@ function removeDept(dept) {
   if(!confirm(`Remove department "${dept}"? Items in this department will not be deleted.`)) return;
   const colors = getDeptColors();
   delete colors[dept];
-  localStorage.setItem("ss_dept_colors", JSON.stringify(colors));
+  _deptColors = colors; saveSettings();
   renderDeptList();
 }
 
@@ -916,7 +1006,7 @@ function addCategory() {
   const name = document.getElementById("new-cat-name").value.trim();
   if(!name) return;
   const cats = getCategories();
-  if(!cats.includes(name)) { cats.push(name); localStorage.setItem("ss_categories", JSON.stringify(cats)); }
+  if(!cats.includes(name)) { cats.push(name); _categories = cats; saveSettings(); }
   document.getElementById("new-cat-name").value = "";
   renderCatList();
   updateCatDropdown();
@@ -925,7 +1015,7 @@ function addCategory() {
 
 function removeCat(cat) {
   const cats = getCategories().filter(c=>c!==cat);
-  localStorage.setItem("ss_categories", JSON.stringify(cats));
+  _categories = cats; saveSettings();
   renderCatList();
 }
 
