@@ -186,6 +186,7 @@ tr:hover td{background:#F9FAFB}
         </select>
         <button class="btn btn-green btn-sm" onclick="bulkStatusChange()">Apply</button>
       </div>
+      <button class="btn btn-gray" onclick="bulkPrintQRFromDashboard()" title="Print QR codes for checked items">🖨️ Print Selected QR Codes</button>
       <button class="btn btn-green" onclick="openAddModal()">+ Add Item</button>
     </div>
   </div>
@@ -1148,14 +1149,26 @@ function printQR() {
 }
 
 function bulkPrintQR() {
-  // Get all checked items, or all items if none checked
+  // Full Inventory: checked items, or all items if none checked
   const checked = [...document.querySelectorAll(".bulk-check:checked")].map(c=>c.dataset.id);
   const items = checked.length > 0
     ? allItems.filter(i=>checked.includes(i.id))
     : allItems;
 
   if(!items.length) { showToast("No items to print", true); return; }
+  printQRLabels(items);
+}
 
+function bulkPrintQRFromDashboard() {
+  // Dashboard: only prints what's actually checked — no "print everything" fallback here
+  const checked = [...document.querySelectorAll(".dash-bulk-check:checked")].map(c=>c.dataset.id);
+  if(!checked.length) { showToast("Select at least one item first", true); return; }
+  const items = allItems.filter(i=>checked.includes(i.id));
+  if(!items.length) { showToast("No items to print", true); return; }
+  printQRLabels(items);
+}
+
+function printQRLabels(items) {
   // Build all labels
   const labels = items.map(item => buildLabelHTML(item)).filter(Boolean);
 
