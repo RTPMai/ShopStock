@@ -545,6 +545,9 @@ function renderInventory() {
             <div class="order-card-info">
               <div class="order-card-name" style="cursor:pointer;color:#3D9A5C" onclick="viewItem('${item.id}')">${item.name}</div>
               <div class="order-card-meta">${item.department||""} · ${item.supplier||"No supplier"} · ${item.unit||""}</div>
+              <div class="order-card-meta" style="color:#9CA3AF;margin-top:2px">${item.status==="Ordered"
+                ? (item.lastOrdered?`📦 Ordered ${new Date(item.lastOrdered).toLocaleDateString()}`:"📦 Order date not recorded")
+                : (item.needsOrderedAt?`🚩 Flagged ${new Date(item.needsOrderedAt).toLocaleDateString()}`:"🚩 Flag date not recorded")}</div>
             </div>
             <div class="order-card-price">$${(item.currentPrice||0).toFixed(2)}</div>
             <div class="order-card-actions">
