@@ -1106,10 +1106,12 @@ function getQRDataUrl(id) {
 function buildLabelHTML(item) {
   const { dataUrl, url } = getQRDataUrl(item.id);
   if(!dataUrl) return "";
+  const qty = extractQuantityFromUnit(item.unit);
   return `<div class="label">
     <div class="dept">${item.department||""}</div>
     <div class="item-name">${item.name}</div>
     <img src="${dataUrl}" class="qr-img"/>
+    ${item.unit?`<div class="qty-line">${item.unit}${qty!=null?` — Qty: ${qty}`:""}</div>`:""}
     <div class="scan-text">Scan to update status</div>
   </div>`;
 }
@@ -1121,6 +1123,7 @@ function printQR() {
   if(!canvas) return;
   const item = allItems.find(i=>url.includes(i.id));
   const dept = item ? (item.department||"") : "";
+  const qty = item ? extractQuantityFromUnit(item.unit) : null;
   const w = window.open("","_blank");
   w.document.write(`<!DOCTYPE html><html><head>
     <style>
@@ -1132,6 +1135,7 @@ function printQR() {
       .dept { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#000; margin-bottom:6px; border-bottom:1px solid #000; padding-bottom:6px; }
       .item-name { font-size:15px; font-weight:700; color:#000; margin:8px 0 10px; line-height:1.3; }
       .qr-img { display:block; margin:0 auto 8px; width:180px; height:180px; }
+      .qty-line { font-size:12px; font-weight:700; color:#000; margin-bottom:6px; }
       .scan-text { font-size:11px; color:#000; }
       .print-btn { margin-top:16px; padding:10px 24px; background:#000; color:#fff; border:none; border-radius:6px; font-size:14px; cursor:pointer; font-weight:600; }
     </style>
@@ -1140,6 +1144,7 @@ function printQR() {
       <div class="dept">${dept}</div>
       <div class="item-name">${title}</div>
       <img src="${canvas.toDataURL()}" class="qr-img"/>
+      ${item&&item.unit?`<div class="qty-line">${item.unit}${qty!=null?` — Qty: ${qty}`:""}</div>`:""}
       <div class="scan-text">Scan to update status</div>
     </div>
     <br/>
@@ -1184,6 +1189,7 @@ function printQRLabels(items) {
       .dept { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid #000; padding-bottom:4px; margin-bottom:4px; }
       .item-name { font-size:12px; font-weight:700; margin:4px 0 6px; line-height:1.2; min-height:30px; display:flex; align-items:center; justify-content:center; }
       .qr-img { display:block; margin:0 auto 4px; width:150px; height:150px; }
+      .qty-line { font-size:10px; font-weight:700; margin-bottom:3px; }
       .scan-text { font-size:9px; }
       .controls { padding:12px; display:flex; gap:10px; align-items:center; }
       .print-btn { padding:10px 24px; background:#000; color:#fff; border:none; border-radius:6px; font-size:14px; cursor:pointer; font-weight:600; }
