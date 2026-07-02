@@ -530,6 +530,7 @@ function renderInventory() {
     <div class="dept-section" style="border-color:${sec.border}">
       <div class="dept-header" style="background:${sec.bg};color:${sec.color}" onclick="toggleDept(this)">
         <div style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleSectionChecks(this)" title="Select all in this section" style="cursor:pointer;width:14px;height:14px"/>
           <span style="width:10px;height:10px;border-radius:50%;background:${sec.color};display:inline-block;flex-shrink:0"></span>
           ${sec.label}
           <span class="dept-count" style="color:${sec.color}">${sec.items.length} item${sec.items.length!==1?"s":""}</span>
@@ -539,6 +540,7 @@ function renderInventory() {
       <div class="dept-body">
         ${sec.items.map(item=>`
           <div class="order-card">
+            <input type="checkbox" class="dash-bulk-check" data-id="${item.id}" style="cursor:pointer;width:14px;height:14px;flex-shrink:0"/>
             <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sec.color};flex-shrink:0;margin-top:4px"></span>
             <div class="order-card-info">
               <div class="order-card-name" style="cursor:pointer;color:#3D9A5C" onclick="viewItem('${item.id}')">${item.name}</div>
@@ -640,6 +642,47 @@ function renderFullInventory() {
       </div>
     </div>`;
   }).join("");
+}
+
+function toggleSectionChecks(checkbox) {
+  const section = checkbox.closest(".dept-section");
+  if(!section) return;
+  section.querySelectorAll(".dash-bulk-check").forEach(c => c.checked = checkbox.checked);
+}
+
+async function bulkStatusChange() {
+  const select = document.getElementById("bulk-status-select");
+  const status = select.value;
+  if(!status) { showToast("Choose a status to apply first", true); return; }
+  const ids = [...document.querySelectorAll(".dash-bulk-check:checked")].map(c => c.dataset.id);
+  if(!ids.length) { showToast("Select at least one item first", true); return; }
+  if(!adminKey) { showToast("Admin key required", true); return; }
+
+  let success = 0, fail = 0;
+  for(const id of ids) {
+    try {
+      const r = await fetch(`${API}?id=${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ status }),
+      });
+      if(r.ok) {
+        const updated = await r.json();
+        const idx = allItems.findIndex(i=>i.id===id);
+        if(idx>=0) allItems[idx] = updated;
+        success++;
+      } else {
+        fail++;
+      }
+    } catch(e) {
+      fail++;
+    }
+  }
+  select.value = "";
+  updateBadge();
+  renderInventory();
+  renderQueue();
+  showToast(`Updated ${success} item${success!==1?"s":""} to ${status}${fail?`, ${fail} failed`:""}`);
 }
 
 function toggleDept(header) {
