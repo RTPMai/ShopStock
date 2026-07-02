@@ -77,6 +77,7 @@ export default async function handler(req, res) {
         lastScraped: v.lastScraped || null,
       })) : [],
       status: body.status || "In Stock",
+      needsOrderedAt: (body.status === "Needs Ordered") ? new Date().toISOString() : null,
       lastOrdered: null,
       timesOrderedYTD: 0,
       notes: body.notes || "",
@@ -103,6 +104,7 @@ export default async function handler(req, res) {
     if(!isAdminReq) {
       if(body.action === "flag") {
         item.status = "Needs Ordered";
+        item.needsOrderedAt = new Date().toISOString();
         item.updatedAt = new Date().toISOString();
         await kvSet(`supply_item_${item.id}`, item);
         // Notify via email
@@ -121,6 +123,7 @@ export default async function handler(req, res) {
     }
 
     // Admin full update
+    const prevStatus = item.status;
     if(body.currentPrice && parseFloat(body.currentPrice) !== item.currentPrice) {
       item.priceHistory = item.priceHistory || [];
       item.priceHistory.push({ price: parseFloat(body.currentPrice), supplier: body.supplier || item.supplier, date: new Date().toISOString() });
@@ -144,8 +147,9 @@ export default async function handler(req, res) {
       })) : (item.altVendors || []),
       updatedAt: new Date().toISOString(),
     });
+    if(body.status === "Needs Ordered" && prevStatus !== "Needs Ordered") item.needsOrderedAt = new Date().toISOString();
     if(body.status === "Ordered") item.lastOrdered = new Date().toISOString();
-    if(body.status === "In Stock" && item.status === "Ordered") item.timesOrderedYTD = (item.timesOrderedYTD||0)+1;
+    if(body.status === "In Stock" && prevStatus === "Ordered") item.timesOrderedYTD = (item.timesOrderedYTD||0)+1;
     await kvSet(`supply_item_${item.id}`, item);
     return res.status(200).json(item);
   }
