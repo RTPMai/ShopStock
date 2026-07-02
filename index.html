@@ -317,6 +317,11 @@ tr:hover td{background:#F9FAFB}
         <div class="field"><label>Current Price ($)</label><input type="number" id="f-price" step="0.01" placeholder="0.00"/></div>
       </div>
       <div class="field"><label>Supplier Link (for scraping)</label><input type="url" id="f-link" placeholder="https://..."/></div>
+      <div class="field">
+        <label>Alternate Vendors (for price comparison)</label>
+        <div id="alt-vendors-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+        <button type="button" class="btn btn-gray btn-sm" onclick="addAltVendorRow()">+ Add Vendor</button>
+      </div>
       <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Any notes..."></textarea></div>
     </div>
     <div class="modal-footer">
@@ -413,6 +418,32 @@ let allItems = [];
 let sortCol = "name", sortDir = 1;
 let adminKey = localStorage.getItem("supply_admin_key") || "";
 let currentItemId = null;
+let modalAltVendors = [];
+
+function renderAltVendorRows() {
+  const el = document.getElementById("alt-vendors-list");
+  if(!el) return;
+  if(!modalAltVendors.length) {
+    el.innerHTML = `<div style="font-size:12px;color:#9CA3AF">No alternate vendors added yet.</div>`;
+    return;
+  }
+  el.innerHTML = modalAltVendors.map((v,i)=>`
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" placeholder="Vendor name" value="${(v.supplier||"").replace(/"/g,'&quot;')}" oninput="modalAltVendors[${i}].supplier=this.value" style="flex:1;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:7px 10px;font-size:12px;outline:none"/>
+      <input type="url" placeholder="https://..." value="${(v.supplierLink||"").replace(/"/g,'&quot;')}" oninput="modalAltVendors[${i}].supplierLink=this.value" style="flex:2;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:7px 10px;font-size:12px;outline:none"/>
+      <button type="button" class="btn btn-gray btn-sm" onclick="removeAltVendorRow(${i})" style="padding:5px 8px">✕</button>
+    </div>`).join("");
+}
+
+function addAltVendorRow() {
+  modalAltVendors.push({ id: "v"+Math.random().toString(36).slice(2,8), supplier: "", supplierLink: "", lastPrice: null, lastScraped: null });
+  renderAltVendorRows();
+}
+
+function removeAltVendorRow(i) {
+  modalAltVendors.splice(i,1);
+  renderAltVendorRows();
+}
 
 // ── Routing ───────────────────────────────────────────────────────────────
 function getPage() {
@@ -738,11 +769,88 @@ function viewItem(id) {
             <span>$${p.price.toFixed(2)} — ${p.supplier||"?"}</span>
             <span style="color:#9CA3AF">${new Date(p.date).toLocaleDateString()}${p.source==="auto-scraped"?" 🤖":""}</span>
           </div>`).join("")}</div>`:`<div style="color:#9CA3AF;font-size:13px">No price history yet</div>`}
-        <button class="btn btn-gray btn-sm" style="margin-top:12px" onclick="scrapeOne('${item.id}')">🤖 Scrape Price Now</button>
       </div>
     </div>
-    <button class="btn btn-gray" onclick="showPage('inventory')">← Back to Inventory</button>
+    ${vendorComparisonHTML(item)}
+    <button class="btn btn-gray" style="margin-top:16px" onclick="showPage('inventory')">← Back to Inventory</button>
   `;
+}
+
+function vendorComparisonHTML(item) {
+  const alt = Array.isArray(item.altVendors) ? item.altVendors : [];
+  const options = [
+    { supplier: item.supplier || "Primary supplier", price: item.currentPrice, link: item.supplierLink, isPrimary: true, lastScraped: item.lastScraped },
+    ...alt.map(v => ({ supplier: v.supplier || "Vendor", price: v.lastPrice, link: v.supplierLink, isPrimary: false, id: v.id, lastScraped: v.lastScraped })),
+  ];
+  const priced = options.filter(o => o.price != null && o.price > 0).slice().sort((a,b) => a.price - b.price);
+  const cheapest = priced[0];
+
+  const rowHTML = o => {
+    const isBest = !!(cheapest && o === cheapest && priced.length > 1);
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F3F4F6">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.supplier}</span>
+            ${o.isPrimary?`<span style="font-size:10px;background:#EFF6FF;color:#2563EB;padding:1px 6px;border-radius:99px;font-weight:600;white-space:nowrap">CURRENT</span>`:""}
+            ${isBest?`<span style="font-size:10px;background:#EAF5EE;color:#3D9A5C;padding:1px 6px;border-radius:99px;font-weight:600;white-space:nowrap">🏆 BEST PRICE</span>`:""}
+          </div>
+          <div style="font-size:11px;color:#9CA3AF">${o.lastScraped?`Checked ${new Date(o.lastScraped).toLocaleDateString()}`:"Not yet checked"}</div>
+        </div>
+        <div style="font-weight:700;font-size:15px;white-space:nowrap;${isBest?"color:#3D9A5C":""}">${o.price!=null&&o.price>0?`$${o.price.toFixed(2)}`:"—"}</div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          ${o.link&&!o.link.toLowerCase().startsWith("email")?`<a href="${o.link}" target="_blank" class="btn btn-gray btn-sm" style="text-decoration:none">Visit</a>`:""}
+          ${!o.isPrimary?`<button class="btn btn-green btn-sm" onclick="switchToVendor('${item.id}','${o.id}')">Use This</button>`:""}
+        </div>
+      </div>`;
+  };
+
+  return `
+    <div class="info-card" style="grid-column:1 / -1">
+      <h4>Vendor Price Comparison</h4>
+      ${options.map(rowHTML).join("")}
+      <button class="btn btn-gray btn-sm" style="margin-top:12px" onclick="scrapeOne('${item.id}')">🤖 Check All Vendor Prices</button>
+    </div>`;
+}
+
+async function switchToVendor(itemId, vendorId) {
+  const item = allItems.find(i=>i.id===itemId);
+  if(!item) return;
+  const vendor = (item.altVendors||[]).find(v=>v.id===vendorId);
+  if(!vendor) return;
+  if(!adminKey) { showToast("Admin key required to switch vendors", true); return; }
+  if(!confirm(`Switch primary supplier to ${vendor.supplier||"this vendor"} at $${(vendor.lastPrice||0).toFixed(2)}?`)) return;
+
+  const newAlt = (item.altVendors||[]).filter(v=>v.id!==vendorId);
+  newAlt.push({
+    id: "v"+Math.random().toString(36).slice(2,8),
+    supplier: item.supplier,
+    supplierLink: item.supplierLink,
+    lastPrice: item.currentPrice,
+    lastScraped: item.lastScraped || null,
+  });
+
+  const body = {
+    supplier: vendor.supplier,
+    supplierLink: vendor.supplierLink,
+    currentPrice: vendor.lastPrice,
+    altVendors: newAlt,
+  };
+
+  const r = await fetch(`${API}?id=${itemId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+    body: JSON.stringify(body),
+  });
+  if(r.ok) {
+    const updated = await r.json();
+    const idx = allItems.findIndex(i=>i.id===itemId);
+    if(idx>=0) allItems[idx] = updated;
+    viewItem(itemId);
+    showToast(`Switched to ${vendor.supplier||"new vendor"}`);
+  } else {
+    showToast("Failed to switch vendor — check admin key", true);
+  }
 }
 
 async function flagItem(id) {
@@ -764,16 +872,18 @@ async function flagItem(id) {
 }
 
 async function scrapeOne(id) {
-  showToast("Scraping price...");
+  showToast("Checking vendor prices...");
   const r = await fetch(`/api/scrape?id=${id}`, { headers: { "x-admin-key": adminKey } });
   const data = await r.json();
-  if(data.updated) {
-    const idx = allItems.findIndex(i=>i.id===id);
-    if(idx>=0) allItems[idx] = data.item;
-    viewItem(id);
+  const idx = allItems.findIndex(i=>i.id===id);
+  if(idx>=0 && data.item) allItems[idx] = data.item;
+  viewItem(id);
+  if(data.isCheaperElsewhere && data.cheapest) {
+    showToast(`Found a better price: $${data.cheapest.price.toFixed(2)} at ${data.cheapest.supplier||"another vendor"}`);
+  } else if(data.updated) {
     showToast(`Price updated to $${data.newPrice.toFixed(2)}`);
   } else {
-    showToast(`No update: ${data.reason||"price unchanged"}`, false);
+    showToast("Prices checked — no change");
   }
 }
 
@@ -783,6 +893,8 @@ function openAddModal() {
   document.getElementById("edit-id").value = "";
   ["name","cat","unit","supplier","link","notes"].forEach(f => document.getElementById("f-"+f).value = "");
   document.getElementById("f-price").value = "";
+  modalAltVendors = [];
+  renderAltVendorRows();
   updateDeptDropdown();
   updateCatDropdown();
   document.getElementById("item-modal").classList.add("open");
@@ -803,6 +915,8 @@ function openEditModal(id) {
   document.getElementById("f-price").value = item.currentPrice||"";
   document.getElementById("f-link").value = item.supplierLink||"";
   document.getElementById("f-notes").value = item.notes||"";
+  modalAltVendors = JSON.parse(JSON.stringify(item.altVendors||[]));
+  renderAltVendorRows();
   document.getElementById("item-modal").classList.add("open");
 }
 
@@ -817,6 +931,7 @@ async function saveItem() {
     currentPrice: document.getElementById("f-price").value,
     supplierLink: document.getElementById("f-link").value.trim(),
     notes: document.getElementById("f-notes").value.trim(),
+    altVendors: modalAltVendors.filter(v => (v.supplier||"").trim() || (v.supplierLink||"").trim()),
   };
   if(!body.name) return showToast("Item name is required", true);
 
