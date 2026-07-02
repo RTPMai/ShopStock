@@ -125,10 +125,12 @@ tr:hover td{background:#F9FAFB}
 .empty-icon{font-size:40px;margin-bottom:12px}
 .empty p{font-size:14px}
 
-@media(max-width:600px){.item-grid{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.item-grid{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.dashboard-grid{grid-template-columns:1fr}}
 
 /* Department sections */
 .dept-section{margin-bottom:16px;border-radius:10px;overflow:hidden;border:2px solid #E5E7EB}
+.dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;align-items:start}
+.dashboard-grid .dept-section{margin-bottom:0}
 .dept-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;font-weight:600;font-size:14px}
 .dept-header:hover{filter:brightness(.97)}
 .dept-toggle{font-size:18px;transition:transform .2s;line-height:1}
@@ -284,6 +286,14 @@ tr:hover td{background:#F9FAFB}
       <div style="padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px">
         <div style="font-size:13px;color:#6B7280">Export all inventory data as CSV.</div>
         <button class="btn btn-gray" onclick="exportCSV()" style="align-self:flex-start;width:auto">Export to CSV</button>
+      </div>
+    </div>
+    <div class="card" style="border-color:#FECACA">
+      <div class="card-hd"><h3 style="color:#DC2626">Danger Zone</h3></div>
+      <div style="padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px">
+        <div style="font-size:13px;color:#6B7280">Permanently delete every item. Use this before a clean CSV re-import if duplicates have piled up.</div>
+        <div style="font-size:12px;color:#DC2626;font-weight:600" id="item-count-display"></div>
+        <button class="btn btn-red" onclick="deleteAllItems()">🗑️ Delete All Items</button>
       </div>
     </div>
   </div>
@@ -516,8 +526,8 @@ function renderInventory() {
     { label:"On Order",      color:"#D97706", bg:"#FFFBEB", border:"#FDE68A", items: needItems.filter(i=>i.status==="Ordered") },
   ].filter(s=>s.items.length>0);
 
-  el.innerHTML = sections.map(sec=>`
-    <div class="dept-section" style="border-color:${sec.border};margin-bottom:16px">
+  el.innerHTML = `<div class="dashboard-grid">${sections.map(sec=>`
+    <div class="dept-section" style="border-color:${sec.border}">
       <div class="dept-header" style="background:${sec.bg};color:${sec.color}" onclick="toggleDept(this)">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="width:10px;height:10px;border-radius:50%;background:${sec.color};display:inline-block;flex-shrink:0"></span>
@@ -546,7 +556,7 @@ function renderInventory() {
             </div>
           </div>`).join("")}
       </div>
-    </div>`).join("");
+    </div>`).join("")}</div>`;
 }
 
 // ── Full Inventory view (by department, collapsible) ───────────────────────
@@ -809,7 +819,9 @@ function vendorComparisonHTML(item) {
     <div class="info-card" style="grid-column:1 / -1">
       <h4>Vendor Price Comparison</h4>
       ${options.map(rowHTML).join("")}
-      <button class="btn btn-gray btn-sm" style="margin-top:12px" onclick="scrapeOne('${item.id}')">🤖 Check All Vendor Prices</button>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-gray btn-sm" onclick="scrapeOne('${item.id}')">🤖 Check All Vendor Prices</button>
+      </div>
     </div>`;
 }
 
@@ -1081,8 +1093,26 @@ function bulkPrintQR() {
 function initAdmin() {
   document.getElementById("admin-key-input").value = adminKey;
   document.getElementById("admin-status").textContent = adminKey ? "✅ Admin key saved" : "";
+  const countEl = document.getElementById("item-count-display");
+  if(countEl) countEl.textContent = `Currently ${allItems.length} item${allItems.length!==1?"s":""} in the database`;
   renderDeptList();
   renderCatList();
+}
+
+async function deleteAllItems() {
+  if(!adminKey) { showToast("Please save your admin key first", true); return; }
+  if(!confirm(`This will permanently delete ALL ${allItems.length} items and cannot be undone. Continue?`)) return;
+  if(!confirm(`Really sure? This wipes the entire database — you'll need to re-import from CSV afterward.`)) return;
+  const r = await fetch(`${API}?all=true`, { method: "DELETE", headers: { "x-admin-key": adminKey } });
+  if(r.ok) {
+    const data = await r.json();
+    allItems = [];
+    renderInventory(); renderFullInventory(); populateFilters(); updateBadge();
+    initAdmin();
+    showToast(`Deleted ${data.deleted} items`);
+  } else {
+    showToast("Failed to delete — check admin key", true);
+  }
 }
 
 function renderDeptList() {
@@ -1230,12 +1260,16 @@ async function importCSV(input) {
     return vals.map(v => v.trim());
   }
 
-  let imported = 0, failed = 0, skipped = 0;
+  let imported = 0, failed = 0, skipped = 0, duplicates = 0;
+  const existingNames = new Set(allItems.map(i => (i.name||"").trim().toLowerCase()));
   for(let i=1;i<lines.length;i++) {
     const vals = parseCSVLine(lines[i]);
     const obj = {};
     headers.forEach((h,j)=>obj[h]=(vals[j]||""));
     if(!obj.name) { skipped++; continue; }
+    const key = obj.name.trim().toLowerCase();
+    if(existingNames.has(key)) { duplicates++; continue; }
+    existingNames.add(key);
 
     try {
       const r = await fetch(API, {
@@ -1260,8 +1294,8 @@ async function importCSV(input) {
     await new Promise(r=>setTimeout(r,150));
   }
 
-  statusEl.textContent = `Done — ${imported} imported, ${failed} failed, ${skipped} skipped`;
-  showToast(`Imported ${imported} items`);
+  statusEl.textContent = `Done — ${imported} imported, ${duplicates} duplicates skipped, ${failed} failed, ${skipped} skipped`;
+  showToast(`Imported ${imported} items${duplicates?`, skipped ${duplicates} duplicates`:""}`);
   renderInventory(); populateFilters(); updateBadge();
 }
 
