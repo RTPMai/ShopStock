@@ -81,23 +81,54 @@ export default async function handler(req, res) {
     }
   }
 
-  // Scrape a single item by ID
+  // Scrape a single item by ID — also checks alternate vendor links for comparison
   if(req.query.id) {
     const item = await kvGet(`supply_item_${req.query.id}`);
     if(!item) return res.status(404).json({ error: "Item not found" });
+
+    // Scrape the primary supplier link (this is the only one that can auto-update currentPrice)
     const result = await scrapePrice(item.supplierLink);
+    let primaryUpdated = false;
     if(result.price && result.price !== item.currentPrice) {
       item.priceHistory = item.priceHistory || [];
       item.priceHistory.push({ price: result.price, supplier: item.supplier, date: new Date().toISOString(), source: "auto-scraped" });
       item.currentPrice = result.price;
-      item.lastScraped = new Date().toISOString();
-      item.updatedAt = new Date().toISOString();
-      await kvSet(`supply_item_${item.id}`, item);
-      return res.status(200).json({ updated: true, newPrice: result.price, item });
+      primaryUpdated = true;
     }
     item.lastScraped = new Date().toISOString();
+
+    // Scrape alternate vendors — comparison only, never touches currentPrice automatically
+    item.altVendors = Array.isArray(item.altVendors) ? item.altVendors : [];
+    for(const v of item.altVendors) {
+      const vResult = await scrapePrice(v.supplierLink);
+      if(vResult.price != null) v.lastPrice = vResult.price;
+      v.lastScraped = new Date().toISOString();
+      v.lastScrapeReason = vResult.reason;
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    item.updatedAt = new Date().toISOString();
     await kvSet(`supply_item_${item.id}`, item);
-    return res.status(200).json({ updated: false, price: item.currentPrice, reason: result.reason });
+
+    // Figure out the cheapest option across primary + alt vendors
+    const options = [
+      { supplier: item.supplier, price: item.currentPrice, link: item.supplierLink, isPrimary: true },
+      ...item.altVendors
+        .filter(v => v.lastPrice != null)
+        .map(v => ({ supplier: v.supplier, price: v.lastPrice, link: v.supplierLink, isPrimary: false, id: v.id })),
+    ].filter(o => o.price != null && o.price > 0);
+    options.sort((a, b) => a.price - b.price);
+    const cheapest = options[0] || null;
+    const isCheaperElsewhere = !!(cheapest && !cheapest.isPrimary && cheapest.price < item.currentPrice);
+
+    return res.status(200).json({
+      updated: primaryUpdated,
+      newPrice: primaryUpdated ? item.currentPrice : null,
+      reason: result.reason,
+      item,
+      cheapest,
+      isCheaperElsewhere,
+    });
   }
 
   // Scrape all items
