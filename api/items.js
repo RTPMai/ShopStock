@@ -69,6 +69,13 @@ export default async function handler(req, res) {
       unit: body.unit || "",
       currentPrice: parseFloat(body.currentPrice) || 0,
       priceHistory: body.currentPrice ? [{ price: parseFloat(body.currentPrice), supplier: body.supplier, date: new Date().toISOString() }] : [],
+      altVendors: Array.isArray(body.altVendors) ? body.altVendors.map(v => ({
+        id: v.id || ("v" + Math.random().toString(36).slice(2, 8)),
+        supplier: v.supplier || "",
+        supplierLink: v.supplierLink || "",
+        lastPrice: v.lastPrice != null && v.lastPrice !== "" ? parseFloat(v.lastPrice) : null,
+        lastScraped: v.lastScraped || null,
+      })) : [],
       status: body.status || "In Stock",
       lastOrdered: null,
       timesOrderedYTD: 0,
@@ -128,6 +135,13 @@ export default async function handler(req, res) {
       currentPrice: body.currentPrice ? parseFloat(body.currentPrice) : item.currentPrice,
       status: body.status ?? item.status,
       notes: body.notes ?? item.notes,
+      altVendors: Array.isArray(body.altVendors) ? body.altVendors.map(v => ({
+        id: v.id || ("v" + Math.random().toString(36).slice(2, 8)),
+        supplier: v.supplier || "",
+        supplierLink: v.supplierLink || "",
+        lastPrice: v.lastPrice != null && v.lastPrice !== "" ? parseFloat(v.lastPrice) : null,
+        lastScraped: v.lastScraped || null,
+      })) : (item.altVendors || []),
       updatedAt: new Date().toISOString(),
     });
     if(body.status === "Ordered") item.lastOrdered = new Date().toISOString();
