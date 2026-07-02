@@ -150,9 +150,17 @@ export default async function handler(req, res) {
     return res.status(200).json(item);
   }
 
-  // DELETE item (admin only)
+  // DELETE item (admin only) — supports ?all=true to wipe every item (for clean re-imports)
   if(req.method === "DELETE") {
     if(!isAdmin()) return res.status(401).json({ error: "Unauthorized" });
+    if(req.query.all === "true") {
+      const index = await kvGet("supply_index") || [];
+      for(const id of index) {
+        await fetch(`${kvUrl}/del/supply_item_${id}`, { method: "POST", headers: { Authorization: `Bearer ${kvToken}` } });
+      }
+      await kvSet("supply_index", []);
+      return res.status(200).json({ ok: true, deleted: index.length });
+    }
     if(!req.query.id) return res.status(400).json({ error: "Missing id" });
     const index = (await kvGet("supply_index") || []).filter(i => i !== req.query.id);
     await kvSet("supply_index", index);
