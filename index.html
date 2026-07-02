@@ -199,6 +199,7 @@ tr:hover td{background:#F9FAFB}
     <div>
       <div style="font-size:22px;font-weight:700">Full Inventory</div>
       <div style="font-size:13px;color:#6B7280;margin-top:2px" id="full-sub"></div>
+      <div style="font-size:11px;color:#D97706;margin-top:2px">* Item Total shows Unit Price only — no quantity number was detected in the Unit field</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input class="search-input" id="full-search" placeholder="Search items..." oninput="renderFullInventory()"/>
@@ -424,6 +425,27 @@ function deptBadge(dept) {
   return `<span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${c.bg};color:${c.text};border:1px solid ${c.border}">${dept||"General"}</span>`;
 }
 
+function extractQuantityFromUnit(unitStr) {
+  if(!unitStr) return null;
+  const s = String(unitStr);
+  // Prefer patterns like "Case of 24" or "Box of 100"
+  let m = s.match(/\bof\s+(\d+(?:\.\d+)?)/i);
+  if(m) return parseFloat(m[1]);
+  // Otherwise fall back to the first number found anywhere in the text
+  m = s.match(/(\d+(?:\.\d+)?)/);
+  if(m) return parseFloat(m[1]);
+  return null;
+}
+
+function itemQuantity(item) {
+  const q = extractQuantityFromUnit(item.unit);
+  return q != null ? q : 1;
+}
+
+function itemTotal(item) {
+  return (item.currentPrice||0) * itemQuantity(item);
+}
+
 let allItems = [];
 let sortCol = "name", sortDir = 1;
 let adminKey = localStorage.getItem("supply_admin_key") || "";
@@ -600,17 +622,21 @@ function renderFullInventory() {
         <table style="table-layout:fixed;width:100%">
           <thead><tr>
             <th style="width:32px"><input type="checkbox" onclick="toggleAllChecks(this)" title="Select all"/></th>
-            <th style="width:30%">Item</th>
-            <th style="width:12%">Supplier</th>
-            <th style="width:8%">Price</th>
-            <th style="width:12%">Unit</th>
-            <th style="width:12%">Status</th>
-            <th style="width:10%">Last Ordered</th>
-            <th style="width:5%">YTD</th>
+            <th style="width:26%">Item</th>
+            <th style="width:10%">Supplier</th>
+            <th style="width:8%">Unit Price</th>
+            <th style="width:8%">Item Total</th>
+            <th style="width:10%">Unit</th>
+            <th style="width:10%">Status</th>
+            <th style="width:9%">Last Ordered</th>
+            <th style="width:4%">YTD</th>
             <th style="width:11%">Actions</th>
           </tr></thead>
           <tbody>
-            ${deptItems.map(item=>`<tr>
+            ${deptItems.map(item=>{
+              const qty = extractQuantityFromUnit(item.unit);
+              const total = (item.currentPrice||0) * (qty!=null?qty:1);
+              return `<tr>
               <td><input type="checkbox" class="bulk-check" data-id="${item.id}"/></td>
               <td style="overflow:hidden;cursor:pointer" onclick="viewItem('${item.id}')">
                 <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3D9A5C">${item.name}</div>
@@ -621,6 +647,7 @@ function renderFullInventory() {
                 ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")&&!item.supplierLink.startsWith("email")?`<a href="${item.supplierLink}" target="_blank" style="display:inline-block;padding:2px 8px;background:#EAF5EE;color:#3D9A5C;border:1px solid #BBF7D0;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none">🛒 Order</a>`:item.supplierLink?`<span style="font-size:11px;color:#9CA3AF">📧 Email order</span>`:""}
               </td>
               <td style="font-weight:600">$${(item.currentPrice||0).toFixed(2)}</td>
+              <td style="font-weight:600" title="${qty!=null?`${qty} × $${(item.currentPrice||0).toFixed(2)}`:"No quantity detected in Unit — showing unit price"}">$${total.toFixed(2)}${qty==null?` <span style="color:#D97706;font-weight:400">*</span>`:""}</td>
               <td style="color:#6B7280">${item.unit||"—"}</td>
               <td>
                 <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:4px 6px;font-size:12px;cursor:pointer;outline:none">
@@ -636,9 +663,11 @@ function renderFullInventory() {
                 <div style="display:flex;gap:4px">
                   <button class="btn btn-gray btn-sm" onclick="showQR('${item.id}')">QR</button>
                   <button class="btn btn-gray btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
+                  <button class="btn btn-red btn-sm" onclick="deleteItem('${item.id}')">Delete</button>
                 </div>
               </td>
-            </tr>`).join("")}
+            </tr>`;
+            }).join("")}
           </tbody>
         </table>
         </div>
@@ -783,7 +812,10 @@ function viewItem(id) {
             <span><span class="status ${statusClass(item.status)}">${statusDot(item.status)} ${item.status||"In Stock"}</span></span>
           </div>
         </div>
-        <div style="font-size:32px;font-weight:700;color:#3D9A5C">$${(item.currentPrice||0).toFixed(2)}</div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Unit Price</div>
+          <div style="font-size:32px;font-weight:700;color:#3D9A5C">$${(item.currentPrice||0).toFixed(2)}</div>
+        </div>
       </div>
       <div class="item-actions">
         ${item.status==="In Stock"?
@@ -800,6 +832,7 @@ function viewItem(id) {
         ${item.supplierLink&&!item.supplierLink.startsWith("email")&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" class="btn btn-green" style="text-decoration:none">🛒 Place Order</a>`:item.supplierLink?`<span class="btn btn-gray" style="cursor:default">📧 ${item.supplierLink}</span>`:""}
         <button class="btn btn-gray" onclick="openEditModal('${item.id}')">✏️ Edit</button>
         <button class="btn btn-gray" onclick="showQR('${item.id}')">📱 QR Code</button>
+        <button class="btn btn-red" onclick="deleteItem('${item.id}')">🗑️ Delete</button>
       </div>
     </div>
 
@@ -807,6 +840,8 @@ function viewItem(id) {
       <div class="info-card">
         <h4>Item Details</h4>
         <div class="info-row"><span class="lbl">Unit</span><span class="val">${item.unit||"—"}</span></div>
+        <div class="info-row"><span class="lbl">Unit Price</span><span class="val">$${(item.currentPrice||0).toFixed(2)}</span></div>
+        <div class="info-row"><span class="lbl">Item Total</span><span class="val" title="${extractQuantityFromUnit(item.unit)!=null?`${extractQuantityFromUnit(item.unit)} × $${(item.currentPrice||0).toFixed(2)}`:"No quantity detected in Unit — showing unit price"}">$${itemTotal(item).toFixed(2)}${extractQuantityFromUnit(item.unit)==null?` <span style="color:#D97706">*</span>`:""}</span></div>
         <div class="info-row"><span class="lbl">Supplier</span><span class="val">${item.supplier||"—"}</span></div>
         <div class="info-row"><span class="lbl">Supplier Link</span><span class="val" style="max-width:200px;overflow:hidden;text-overflow:ellipsis">
           ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")&&!item.supplierLink.startsWith("email")
@@ -908,6 +943,22 @@ async function switchToVendor(itemId, vendorId) {
     showToast(`Switched to ${vendor.supplier||"new vendor"}`);
   } else {
     showToast("Failed to switch vendor — check admin key", true);
+  }
+}
+
+async function deleteItem(id) {
+  if(!adminKey) { showToast("Admin key required", true); return; }
+  const item = allItems.find(i=>i.id===id);
+  if(!item) return;
+  if(!confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
+  const r = await fetch(`${API}?id=${id}`, { method: "DELETE", headers: { "x-admin-key": adminKey } });
+  if(r.ok) {
+    allItems = allItems.filter(i=>i.id!==id);
+    renderInventory(); renderFullInventory(); populateFilters(); updateBadge();
+    showToast(`Deleted "${item.name}"`);
+    if(document.getElementById("page-item").classList.contains("active")) showPage("inventory");
+  } else {
+    showToast("Failed to delete — check admin key", true);
   }
 }
 
