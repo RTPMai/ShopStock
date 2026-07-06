@@ -125,12 +125,10 @@ tr:hover td{background:#F9FAFB}
 .empty-icon{font-size:40px;margin-bottom:12px}
 .empty p{font-size:14px}
 
-@media(max-width:600px){.item-grid{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.dashboard-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.item-grid{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
 
 /* Department sections */
 .dept-section{margin-bottom:16px;border-radius:10px;overflow:hidden;border:2px solid #E5E7EB}
-.dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;align-items:start}
-.dashboard-grid .dept-section{margin-bottom:0}
 .dept-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;font-weight:600;font-size:14px}
 .dept-header:hover{filter:brightness(.97)}
 .dept-toggle{font-size:18px;transition:transform .2s;line-height:1}
@@ -186,7 +184,6 @@ tr:hover td{background:#F9FAFB}
         </select>
         <button class="btn btn-green btn-sm" onclick="bulkStatusChange()">Apply</button>
       </div>
-      <button class="btn btn-gray" onclick="bulkPrintQRFromDashboard()" title="Print QR codes for checked items">🖨️ Print Selected QR Codes</button>
       <button class="btn btn-green" onclick="openAddModal()">+ Add Item</button>
     </div>
   </div>
@@ -200,7 +197,6 @@ tr:hover td{background:#F9FAFB}
     <div>
       <div style="font-size:22px;font-weight:700">Full Inventory</div>
       <div style="font-size:13px;color:#6B7280;margin-top:2px" id="full-sub"></div>
-      <div style="font-size:11px;color:#D97706;margin-top:2px">* Item Total shows Unit Price only — no quantity number was detected in the Unit field</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input class="search-input" id="full-search" placeholder="Search items..." oninput="renderFullInventory()"/>
@@ -268,34 +264,26 @@ tr:hover td{background:#F9FAFB}
     </div>
     <div class="card">
       <div class="card-hd"><h3>Price Scraping</h3></div>
-      <div style="padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px">
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:13px;color:#6B7280">Automatically check supplier URLs and update prices where possible.</div>
-        <button class="btn btn-green" onclick="runScrape()" style="align-self:flex-start;width:auto">Run Price Scrape Now</button>
+        <button class="btn btn-green btn-sm" onclick="runScrape()">Run Price Scrape Now</button>
         <div style="font-size:12px;color:#9CA3AF" id="scrape-status"></div>
       </div>
     </div>
     <div class="card">
       <div class="card-hd"><h3>Import from CSV</h3></div>
-      <div style="padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px">
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:13px;color:#6B7280">Upload a CSV to bulk-import items. Columns: name, department, category, supplier, supplierLink, unit, currentPrice, notes</div>
         <input type="file" id="csv-input" accept=".csv"/>
-        <button class="btn btn-green" onclick="importCSV(document.getElementById('csv-input'))" style="margin-top:8px;align-self:flex-start;width:auto">Import CSV</button>
+        <button class="btn btn-green btn-sm" onclick="importCSV(document.getElementById('csv-input'))" style="margin-top:8px">Import CSV</button>
         <div style="font-size:12px;color:#9CA3AF;margin-top:8px" id="import-status"></div>
       </div>
     </div>
     <div class="card">
       <div class="card-hd"><h3>Export</h3></div>
-      <div style="padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px">
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:13px;color:#6B7280">Export all inventory data as CSV.</div>
-        <button class="btn btn-gray" onclick="exportCSV()" style="align-self:flex-start;width:auto">Export to CSV</button>
-      </div>
-    </div>
-    <div class="card" style="border-color:#FECACA">
-      <div class="card-hd"><h3 style="color:#DC2626">Danger Zone</h3></div>
-      <div style="padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px">
-        <div style="font-size:13px;color:#6B7280">Permanently delete every item. Use this before a clean CSV re-import if duplicates have piled up.</div>
-        <div style="font-size:12px;color:#DC2626;font-weight:600" id="item-count-display"></div>
-        <button class="btn btn-red" onclick="deleteAllItems()">🗑️ Delete All Items</button>
+        <button class="btn btn-gray btn-sm" onclick="exportCSV()">Export to CSV</button>
       </div>
     </div>
   </div>
@@ -329,11 +317,6 @@ tr:hover td{background:#F9FAFB}
         <div class="field"><label>Current Price ($)</label><input type="number" id="f-price" step="0.01" placeholder="0.00"/></div>
       </div>
       <div class="field"><label>Supplier Link (for scraping)</label><input type="url" id="f-link" placeholder="https://..."/></div>
-      <div class="field">
-        <label>Alternate Vendors (for price comparison)</label>
-        <div id="alt-vendors-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
-        <button type="button" class="btn btn-gray btn-sm" onclick="addAltVendorRow()">+ Add Vendor</button>
-      </div>
       <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Any notes..."></textarea></div>
     </div>
     <div class="modal-footer">
@@ -426,57 +409,10 @@ function deptBadge(dept) {
   return `<span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:${c.bg};color:${c.text};border:1px solid ${c.border}">${dept||"General"}</span>`;
 }
 
-function extractQuantityFromUnit(unitStr) {
-  if(!unitStr) return null;
-  const s = String(unitStr);
-  // Prefer patterns like "Case of 24" or "Box of 100"
-  let m = s.match(/\bof\s+(\d+(?:\.\d+)?)/i);
-  if(m) return parseFloat(m[1]);
-  // Otherwise fall back to the first number found anywhere in the text
-  m = s.match(/(\d+(?:\.\d+)?)/);
-  if(m) return parseFloat(m[1]);
-  return null;
-}
-
-function itemQuantity(item) {
-  const q = extractQuantityFromUnit(item.unit);
-  return q != null ? q : 1;
-}
-
-function itemTotal(item) {
-  return (item.currentPrice||0) * itemQuantity(item);
-}
-
 let allItems = [];
 let sortCol = "name", sortDir = 1;
 let adminKey = localStorage.getItem("supply_admin_key") || "";
 let currentItemId = null;
-let modalAltVendors = [];
-
-function renderAltVendorRows() {
-  const el = document.getElementById("alt-vendors-list");
-  if(!el) return;
-  if(!modalAltVendors.length) {
-    el.innerHTML = `<div style="font-size:12px;color:#9CA3AF">No alternate vendors added yet.</div>`;
-    return;
-  }
-  el.innerHTML = modalAltVendors.map((v,i)=>`
-    <div style="display:flex;gap:6px;align-items:center">
-      <input type="text" placeholder="Vendor name" value="${(v.supplier||"").replace(/"/g,'&quot;')}" oninput="modalAltVendors[${i}].supplier=this.value" style="flex:1;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:7px 10px;font-size:12px;outline:none"/>
-      <input type="url" placeholder="https://..." value="${(v.supplierLink||"").replace(/"/g,'&quot;')}" oninput="modalAltVendors[${i}].supplierLink=this.value" style="flex:2;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:7px 10px;font-size:12px;outline:none"/>
-      <button type="button" class="btn btn-gray btn-sm" onclick="removeAltVendorRow(${i})" style="padding:5px 8px">✕</button>
-    </div>`).join("");
-}
-
-function addAltVendorRow() {
-  modalAltVendors.push({ id: "v"+Math.random().toString(36).slice(2,8), supplier: "", supplierLink: "", lastPrice: null, lastScraped: null });
-  renderAltVendorRows();
-}
-
-function removeAltVendorRow(i) {
-  modalAltVendors.splice(i,1);
-  renderAltVendorRows();
-}
 
 // ── Routing ───────────────────────────────────────────────────────────────
 function getPage() {
@@ -549,11 +485,10 @@ function renderInventory() {
     { label:"On Order",      color:"#D97706", bg:"#FFFBEB", border:"#FDE68A", items: needItems.filter(i=>i.status==="Ordered") },
   ].filter(s=>s.items.length>0);
 
-  el.innerHTML = `<div class="dashboard-grid">${sections.map(sec=>`
-    <div class="dept-section" style="border-color:${sec.border}">
+  el.innerHTML = sections.map(sec=>`
+    <div class="dept-section" style="border-color:${sec.border};margin-bottom:16px">
       <div class="dept-header" style="background:${sec.bg};color:${sec.color}" onclick="toggleDept(this)">
         <div style="display:flex;align-items:center;gap:8px">
-          <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleSectionChecks(this)" title="Select all in this section" style="cursor:pointer;width:14px;height:14px"/>
           <span style="width:10px;height:10px;border-radius:50%;background:${sec.color};display:inline-block;flex-shrink:0"></span>
           ${sec.label}
           <span class="dept-count" style="color:${sec.color}">${sec.items.length} item${sec.items.length!==1?"s":""}</span>
@@ -563,14 +498,10 @@ function renderInventory() {
       <div class="dept-body">
         ${sec.items.map(item=>`
           <div class="order-card">
-            <input type="checkbox" class="dash-bulk-check" data-id="${item.id}" style="cursor:pointer;width:14px;height:14px;flex-shrink:0"/>
             <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sec.color};flex-shrink:0;margin-top:4px"></span>
             <div class="order-card-info">
               <div class="order-card-name" style="cursor:pointer;color:#3D9A5C" onclick="viewItem('${item.id}')">${item.name}</div>
               <div class="order-card-meta">${item.department||""} · ${item.supplier||"No supplier"} · ${item.unit||""}</div>
-              <div class="order-card-meta" style="color:#9CA3AF;margin-top:2px">${item.status==="Ordered"
-                ? (item.lastOrdered?`📦 Ordered ${new Date(item.lastOrdered).toLocaleDateString()}`:"📦 Order date not recorded")
-                : (item.needsOrderedAt?`🚩 Flagged ${new Date(item.needsOrderedAt).toLocaleDateString()}`:"🚩 Flag date not recorded")}</div>
             </div>
             <div class="order-card-price">$${(item.currentPrice||0).toFixed(2)}</div>
             <div class="order-card-actions">
@@ -584,7 +515,7 @@ function renderInventory() {
             </div>
           </div>`).join("")}
       </div>
-    </div>`).join("")}</div>`;
+    </div>`).join("");
 }
 
 // ── Full Inventory view (by department, collapsible) ───────────────────────
@@ -623,21 +554,17 @@ function renderFullInventory() {
         <table style="table-layout:fixed;width:100%">
           <thead><tr>
             <th style="width:32px"><input type="checkbox" onclick="toggleAllChecks(this)" title="Select all"/></th>
-            <th style="width:26%">Item</th>
-            <th style="width:10%">Supplier</th>
-            <th style="width:8%">Unit Price</th>
-            <th style="width:8%">Item Total</th>
-            <th style="width:10%">Unit</th>
-            <th style="width:10%">Status</th>
-            <th style="width:9%">Last Ordered</th>
-            <th style="width:4%">YTD</th>
+            <th style="width:30%">Item</th>
+            <th style="width:12%">Supplier</th>
+            <th style="width:8%">Price</th>
+            <th style="width:12%">Unit</th>
+            <th style="width:12%">Status</th>
+            <th style="width:10%">Last Ordered</th>
+            <th style="width:5%">YTD</th>
             <th style="width:11%">Actions</th>
           </tr></thead>
           <tbody>
-            ${deptItems.map(item=>{
-              const qty = extractQuantityFromUnit(item.unit);
-              const total = (item.currentPrice||0) * (qty!=null?qty:1);
-              return `<tr>
+            ${deptItems.map(item=>`<tr>
               <td><input type="checkbox" class="bulk-check" data-id="${item.id}"/></td>
               <td style="overflow:hidden;cursor:pointer" onclick="viewItem('${item.id}')">
                 <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3D9A5C">${item.name}</div>
@@ -648,7 +575,6 @@ function renderFullInventory() {
                 ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")&&!item.supplierLink.startsWith("email")?`<a href="${item.supplierLink}" target="_blank" style="display:inline-block;padding:2px 8px;background:#EAF5EE;color:#3D9A5C;border:1px solid #BBF7D0;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none">🛒 Order</a>`:item.supplierLink?`<span style="font-size:11px;color:#9CA3AF">📧 Email order</span>`:""}
               </td>
               <td style="font-weight:600">$${(item.currentPrice||0).toFixed(2)}</td>
-              <td style="font-weight:600" title="${qty!=null?`${qty} × $${(item.currentPrice||0).toFixed(2)}`:"No quantity detected in Unit — showing unit price"}">$${total.toFixed(2)}${qty==null?` <span style="color:#D97706;font-weight:400">*</span>`:""}</td>
               <td style="color:#6B7280">${item.unit||"—"}</td>
               <td>
                 <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:4px 6px;font-size:12px;cursor:pointer;outline:none">
@@ -664,58 +590,15 @@ function renderFullInventory() {
                 <div style="display:flex;gap:4px">
                   <button class="btn btn-gray btn-sm" onclick="showQR('${item.id}')">QR</button>
                   <button class="btn btn-gray btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
-                  <button class="btn btn-red btn-sm" onclick="deleteItem('${item.id}')">Delete</button>
                 </div>
               </td>
-            </tr>`;
-            }).join("")}
+            </tr>`).join("")}
           </tbody>
         </table>
         </div>
       </div>
     </div>`;
   }).join("");
-}
-
-function toggleSectionChecks(checkbox) {
-  const section = checkbox.closest(".dept-section");
-  if(!section) return;
-  section.querySelectorAll(".dash-bulk-check").forEach(c => c.checked = checkbox.checked);
-}
-
-async function bulkStatusChange() {
-  const select = document.getElementById("bulk-status-select");
-  const status = select.value;
-  if(!status) { showToast("Choose a status to apply first", true); return; }
-  const ids = [...document.querySelectorAll(".dash-bulk-check:checked")].map(c => c.dataset.id);
-  if(!ids.length) { showToast("Select at least one item first", true); return; }
-  if(!adminKey) { showToast("Admin key required", true); return; }
-
-  let success = 0, fail = 0;
-  for(const id of ids) {
-    try {
-      const r = await fetch(`${API}?id=${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-        body: JSON.stringify({ status }),
-      });
-      if(r.ok) {
-        const updated = await r.json();
-        const idx = allItems.findIndex(i=>i.id===id);
-        if(idx>=0) allItems[idx] = updated;
-        success++;
-      } else {
-        fail++;
-      }
-    } catch(e) {
-      fail++;
-    }
-  }
-  select.value = "";
-  updateBadge();
-  renderInventory();
-  renderQueue();
-  showToast(`Updated ${success} item${success!==1?"s":""} to ${status}${fail?`, ${fail} failed`:""}`);
 }
 
 function toggleDept(header) {
@@ -813,10 +696,7 @@ function viewItem(id) {
             <span><span class="status ${statusClass(item.status)}">${statusDot(item.status)} ${item.status||"In Stock"}</span></span>
           </div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.4px">Unit Price</div>
-          <div style="font-size:32px;font-weight:700;color:#3D9A5C">$${(item.currentPrice||0).toFixed(2)}</div>
-        </div>
+        <div style="font-size:32px;font-weight:700;color:#3D9A5C">$${(item.currentPrice||0).toFixed(2)}</div>
       </div>
       <div class="item-actions">
         ${item.status==="In Stock"?
@@ -827,13 +707,12 @@ function viewItem(id) {
             <button class="btn btn-amber" style="font-size:15px;padding:11px 20px" onclick="updateStatus('${item.id}','Ordered')">📦 Mark as Ordered</button>
           </div>`
           :item.status==="Ordered"?
-          `<button class="btn btn-green" style="font-size:16px;padding:12px 24px" onclick="updateStatus('${item.id}','In Stock')">✅ Mark as Issue — Back in Stock</button>`
+          `<button class="btn btn-green" style="font-size:16px;padding:12px 24px" onclick="issueItem('${item.id}')">✅ Mark as In Stock — Received</button>`
           :`<button class="btn btn-red" style="font-size:16px;padding:12px 24px" onclick="flagItem('${item.id}')">🚨 Flag as Needs Ordered</button>`
         }
         ${item.supplierLink&&!item.supplierLink.startsWith("email")&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" class="btn btn-green" style="text-decoration:none">🛒 Place Order</a>`:item.supplierLink?`<span class="btn btn-gray" style="cursor:default">📧 ${item.supplierLink}</span>`:""}
         <button class="btn btn-gray" onclick="openEditModal('${item.id}')">✏️ Edit</button>
         <button class="btn btn-gray" onclick="showQR('${item.id}')">📱 QR Code</button>
-        <button class="btn btn-red" onclick="deleteItem('${item.id}')">🗑️ Delete</button>
       </div>
     </div>
 
@@ -841,8 +720,6 @@ function viewItem(id) {
       <div class="info-card">
         <h4>Item Details</h4>
         <div class="info-row"><span class="lbl">Unit</span><span class="val">${item.unit||"—"}</span></div>
-        <div class="info-row"><span class="lbl">Unit Price</span><span class="val">$${(item.currentPrice||0).toFixed(2)}</span></div>
-        <div class="info-row"><span class="lbl">Item Total</span><span class="val" title="${extractQuantityFromUnit(item.unit)!=null?`${extractQuantityFromUnit(item.unit)} × $${(item.currentPrice||0).toFixed(2)}`:"No quantity detected in Unit — showing unit price"}">$${itemTotal(item).toFixed(2)}${extractQuantityFromUnit(item.unit)==null?` <span style="color:#D97706">*</span>`:""}</span></div>
         <div class="info-row"><span class="lbl">Supplier</span><span class="val">${item.supplier||"—"}</span></div>
         <div class="info-row"><span class="lbl">Supplier Link</span><span class="val" style="max-width:200px;overflow:hidden;text-overflow:ellipsis">
           ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")&&!item.supplierLink.startsWith("email")
@@ -861,106 +738,11 @@ function viewItem(id) {
             <span>$${p.price.toFixed(2)} — ${p.supplier||"?"}</span>
             <span style="color:#9CA3AF">${new Date(p.date).toLocaleDateString()}${p.source==="auto-scraped"?" 🤖":""}</span>
           </div>`).join("")}</div>`:`<div style="color:#9CA3AF;font-size:13px">No price history yet</div>`}
+        <button class="btn btn-gray btn-sm" style="margin-top:12px" onclick="scrapeOne('${item.id}')">🤖 Scrape Price Now</button>
       </div>
     </div>
-    ${vendorComparisonHTML(item)}
-    <button class="btn btn-gray" style="margin-top:16px" onclick="showPage('inventory')">← Back to Inventory</button>
+    <button class="btn btn-gray" onclick="showPage('inventory')">← Back to Inventory</button>
   `;
-}
-
-function vendorComparisonHTML(item) {
-  const alt = Array.isArray(item.altVendors) ? item.altVendors : [];
-  const options = [
-    { supplier: item.supplier || "Primary supplier", price: item.currentPrice, link: item.supplierLink, isPrimary: true, lastScraped: item.lastScraped },
-    ...alt.map(v => ({ supplier: v.supplier || "Vendor", price: v.lastPrice, link: v.supplierLink, isPrimary: false, id: v.id, lastScraped: v.lastScraped })),
-  ];
-  const priced = options.filter(o => o.price != null && o.price > 0).slice().sort((a,b) => a.price - b.price);
-  const cheapest = priced[0];
-
-  const rowHTML = o => {
-    const isBest = !!(cheapest && o === cheapest && priced.length > 1);
-    return `
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F3F4F6">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.supplier}</span>
-            ${o.isPrimary?`<span style="font-size:10px;background:#EFF6FF;color:#2563EB;padding:1px 6px;border-radius:99px;font-weight:600;white-space:nowrap">CURRENT</span>`:""}
-            ${isBest?`<span style="font-size:10px;background:#EAF5EE;color:#3D9A5C;padding:1px 6px;border-radius:99px;font-weight:600;white-space:nowrap">🏆 BEST PRICE</span>`:""}
-          </div>
-          <div style="font-size:11px;color:#9CA3AF">${o.lastScraped?`Checked ${new Date(o.lastScraped).toLocaleDateString()}`:"Not yet checked"}</div>
-        </div>
-        <div style="font-weight:700;font-size:15px;white-space:nowrap;${isBest?"color:#3D9A5C":""}">${o.price!=null&&o.price>0?`$${o.price.toFixed(2)}`:"—"}</div>
-        <div style="display:flex;gap:4px;flex-shrink:0">
-          ${o.link&&!o.link.toLowerCase().startsWith("email")?`<a href="${o.link}" target="_blank" class="btn btn-gray btn-sm" style="text-decoration:none">Visit</a>`:""}
-          ${!o.isPrimary?`<button class="btn btn-green btn-sm" onclick="switchToVendor('${item.id}','${o.id}')">Use This</button>`:""}
-        </div>
-      </div>`;
-  };
-
-  return `
-    <div class="info-card" style="grid-column:1 / -1">
-      <h4>Vendor Price Comparison</h4>
-      ${options.map(rowHTML).join("")}
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="btn btn-gray btn-sm" onclick="scrapeOne('${item.id}')">🤖 Check All Vendor Prices</button>
-      </div>
-    </div>`;
-}
-
-async function switchToVendor(itemId, vendorId) {
-  const item = allItems.find(i=>i.id===itemId);
-  if(!item) return;
-  const vendor = (item.altVendors||[]).find(v=>v.id===vendorId);
-  if(!vendor) return;
-  if(!adminKey) { showToast("Admin key required to switch vendors", true); return; }
-  if(!confirm(`Switch primary supplier to ${vendor.supplier||"this vendor"} at $${(vendor.lastPrice||0).toFixed(2)}?`)) return;
-
-  const newAlt = (item.altVendors||[]).filter(v=>v.id!==vendorId);
-  newAlt.push({
-    id: "v"+Math.random().toString(36).slice(2,8),
-    supplier: item.supplier,
-    supplierLink: item.supplierLink,
-    lastPrice: item.currentPrice,
-    lastScraped: item.lastScraped || null,
-  });
-
-  const body = {
-    supplier: vendor.supplier,
-    supplierLink: vendor.supplierLink,
-    currentPrice: vendor.lastPrice,
-    altVendors: newAlt,
-  };
-
-  const r = await fetch(`${API}?id=${itemId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
-    body: JSON.stringify(body),
-  });
-  if(r.ok) {
-    const updated = await r.json();
-    const idx = allItems.findIndex(i=>i.id===itemId);
-    if(idx>=0) allItems[idx] = updated;
-    viewItem(itemId);
-    showToast(`Switched to ${vendor.supplier||"new vendor"}`);
-  } else {
-    showToast("Failed to switch vendor — check admin key", true);
-  }
-}
-
-async function deleteItem(id) {
-  if(!adminKey) { showToast("Admin key required", true); return; }
-  const item = allItems.find(i=>i.id===id);
-  if(!item) return;
-  if(!confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
-  const r = await fetch(`${API}?id=${id}`, { method: "DELETE", headers: { "x-admin-key": adminKey } });
-  if(r.ok) {
-    allItems = allItems.filter(i=>i.id!==id);
-    renderInventory(); renderFullInventory(); populateFilters(); updateBadge();
-    showToast(`Deleted "${item.name}"`);
-    if(document.getElementById("page-item").classList.contains("active")) showPage("inventory");
-  } else {
-    showToast("Failed to delete — check admin key", true);
-  }
 }
 
 async function flagItem(id) {
@@ -981,19 +763,35 @@ async function flagItem(id) {
   }
 }
 
+async function issueItem(id) {
+  const r = await fetch(`${API}?id=${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "issue" })
+  });
+  if(r.ok) {
+    const updated = await r.json();
+    const idx = allItems.findIndex(i=>i.id===id);
+    if(idx>=0) allItems[idx] = updated;
+    updateBadge();
+    viewItem(id);
+    showToast("Marked as In Stock — item received");
+  } else {
+    showToast("Failed to update item", true);
+  }
+}
+
 async function scrapeOne(id) {
-  showToast("Checking vendor prices...");
+  showToast("Scraping price...");
   const r = await fetch(`/api/scrape?id=${id}`, { headers: { "x-admin-key": adminKey } });
   const data = await r.json();
-  const idx = allItems.findIndex(i=>i.id===id);
-  if(idx>=0 && data.item) allItems[idx] = data.item;
-  viewItem(id);
-  if(data.isCheaperElsewhere && data.cheapest) {
-    showToast(`Found a better price: $${data.cheapest.price.toFixed(2)} at ${data.cheapest.supplier||"another vendor"}`);
-  } else if(data.updated) {
+  if(data.updated) {
+    const idx = allItems.findIndex(i=>i.id===id);
+    if(idx>=0) allItems[idx] = data.item;
+    viewItem(id);
     showToast(`Price updated to $${data.newPrice.toFixed(2)}`);
   } else {
-    showToast("Prices checked — no change");
+    showToast(`No update: ${data.reason||"price unchanged"}`, false);
   }
 }
 
@@ -1003,8 +801,6 @@ function openAddModal() {
   document.getElementById("edit-id").value = "";
   ["name","cat","unit","supplier","link","notes"].forEach(f => document.getElementById("f-"+f).value = "");
   document.getElementById("f-price").value = "";
-  modalAltVendors = [];
-  renderAltVendorRows();
   updateDeptDropdown();
   updateCatDropdown();
   document.getElementById("item-modal").classList.add("open");
@@ -1025,8 +821,6 @@ function openEditModal(id) {
   document.getElementById("f-price").value = item.currentPrice||"";
   document.getElementById("f-link").value = item.supplierLink||"";
   document.getElementById("f-notes").value = item.notes||"";
-  modalAltVendors = JSON.parse(JSON.stringify(item.altVendors||[]));
-  renderAltVendorRows();
   document.getElementById("item-modal").classList.add("open");
 }
 
@@ -1041,7 +835,6 @@ async function saveItem() {
     currentPrice: document.getElementById("f-price").value,
     supplierLink: document.getElementById("f-link").value.trim(),
     notes: document.getElementById("f-notes").value.trim(),
-    altVendors: modalAltVendors.filter(v => (v.supplier||"").trim() || (v.supplierLink||"").trim()),
   };
   if(!body.name) return showToast("Item name is required", true);
 
@@ -1106,12 +899,10 @@ function getQRDataUrl(id) {
 function buildLabelHTML(item) {
   const { dataUrl, url } = getQRDataUrl(item.id);
   if(!dataUrl) return "";
-  const qty = extractQuantityFromUnit(item.unit);
   return `<div class="label">
     <div class="dept">${item.department||""}</div>
     <div class="item-name">${item.name}</div>
     <img src="${dataUrl}" class="qr-img"/>
-    ${item.unit?`<div class="qty-line">${item.unit}${qty!=null?` — Qty: ${qty}`:""}</div>`:""}
     <div class="scan-text">Scan to update status</div>
   </div>`;
 }
@@ -1123,7 +914,6 @@ function printQR() {
   if(!canvas) return;
   const item = allItems.find(i=>url.includes(i.id));
   const dept = item ? (item.department||"") : "";
-  const qty = item ? extractQuantityFromUnit(item.unit) : null;
   const w = window.open("","_blank");
   w.document.write(`<!DOCTYPE html><html><head>
     <style>
@@ -1135,7 +925,6 @@ function printQR() {
       .dept { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#000; margin-bottom:6px; border-bottom:1px solid #000; padding-bottom:6px; }
       .item-name { font-size:15px; font-weight:700; color:#000; margin:8px 0 10px; line-height:1.3; }
       .qr-img { display:block; margin:0 auto 8px; width:180px; height:180px; }
-      .qty-line { font-size:12px; font-weight:700; color:#000; margin-bottom:6px; }
       .scan-text { font-size:11px; color:#000; }
       .print-btn { margin-top:16px; padding:10px 24px; background:#000; color:#fff; border:none; border-radius:6px; font-size:14px; cursor:pointer; font-weight:600; }
     </style>
@@ -1144,7 +933,6 @@ function printQR() {
       <div class="dept">${dept}</div>
       <div class="item-name">${title}</div>
       <img src="${canvas.toDataURL()}" class="qr-img"/>
-      ${item&&item.unit?`<div class="qty-line">${item.unit}${qty!=null?` — Qty: ${qty}`:""}</div>`:""}
       <div class="scan-text">Scan to update status</div>
     </div>
     <br/>
@@ -1154,26 +942,14 @@ function printQR() {
 }
 
 function bulkPrintQR() {
-  // Full Inventory: checked items, or all items if none checked
+  // Get all checked items, or all items if none checked
   const checked = [...document.querySelectorAll(".bulk-check:checked")].map(c=>c.dataset.id);
   const items = checked.length > 0
     ? allItems.filter(i=>checked.includes(i.id))
     : allItems;
 
   if(!items.length) { showToast("No items to print", true); return; }
-  printQRLabels(items);
-}
 
-function bulkPrintQRFromDashboard() {
-  // Dashboard: only prints what's actually checked — no "print everything" fallback here
-  const checked = [...document.querySelectorAll(".dash-bulk-check:checked")].map(c=>c.dataset.id);
-  if(!checked.length) { showToast("Select at least one item first", true); return; }
-  const items = allItems.filter(i=>checked.includes(i.id));
-  if(!items.length) { showToast("No items to print", true); return; }
-  printQRLabels(items);
-}
-
-function printQRLabels(items) {
   // Build all labels
   const labels = items.map(item => buildLabelHTML(item)).filter(Boolean);
 
@@ -1189,7 +965,6 @@ function printQRLabels(items) {
       .dept { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid #000; padding-bottom:4px; margin-bottom:4px; }
       .item-name { font-size:12px; font-weight:700; margin:4px 0 6px; line-height:1.2; min-height:30px; display:flex; align-items:center; justify-content:center; }
       .qr-img { display:block; margin:0 auto 4px; width:150px; height:150px; }
-      .qty-line { font-size:10px; font-weight:700; margin-bottom:3px; }
       .scan-text { font-size:9px; }
       .controls { padding:12px; display:flex; gap:10px; align-items:center; }
       .print-btn { padding:10px 24px; background:#000; color:#fff; border:none; border-radius:6px; font-size:14px; cursor:pointer; font-weight:600; }
@@ -1209,26 +984,8 @@ function printQRLabels(items) {
 function initAdmin() {
   document.getElementById("admin-key-input").value = adminKey;
   document.getElementById("admin-status").textContent = adminKey ? "✅ Admin key saved" : "";
-  const countEl = document.getElementById("item-count-display");
-  if(countEl) countEl.textContent = `Currently ${allItems.length} item${allItems.length!==1?"s":""} in the database`;
   renderDeptList();
   renderCatList();
-}
-
-async function deleteAllItems() {
-  if(!adminKey) { showToast("Please save your admin key first", true); return; }
-  if(!confirm(`This will permanently delete ALL ${allItems.length} items and cannot be undone. Continue?`)) return;
-  if(!confirm(`Really sure? This wipes the entire database — you'll need to re-import from CSV afterward.`)) return;
-  const r = await fetch(`${API}?all=true`, { method: "DELETE", headers: { "x-admin-key": adminKey } });
-  if(r.ok) {
-    const data = await r.json();
-    allItems = [];
-    renderInventory(); renderFullInventory(); populateFilters(); updateBadge();
-    initAdmin();
-    showToast(`Deleted ${data.deleted} items`);
-  } else {
-    showToast("Failed to delete — check admin key", true);
-  }
 }
 
 function renderDeptList() {
@@ -1354,7 +1111,7 @@ async function importCSV(input) {
   if(lines.length < 2) { statusEl.textContent = "CSV appears empty"; return; }
 
   // Parse header using same RFC 4180 parser
-  const headers = parseCSVLine(lines[0]).map(h=>h.trim());
+  const headers = parseCSVLine(lines[0]).map(h=>h.toLowerCase().trim());
   statusEl.textContent = `Found ${lines.length-1} rows, importing...`;
 
   // Proper RFC 4180 CSV parser
@@ -1376,16 +1133,12 @@ async function importCSV(input) {
     return vals.map(v => v.trim());
   }
 
-  let imported = 0, failed = 0, skipped = 0, duplicates = 0;
-  const existingNames = new Set(allItems.map(i => (i.name||"").trim().toLowerCase()));
+  let imported = 0, failed = 0, skipped = 0;
   for(let i=1;i<lines.length;i++) {
     const vals = parseCSVLine(lines[i]);
     const obj = {};
     headers.forEach((h,j)=>obj[h]=(vals[j]||""));
     if(!obj.name) { skipped++; continue; }
-    const key = obj.name.trim().toLowerCase();
-    if(existingNames.has(key)) { duplicates++; continue; }
-    existingNames.add(key);
 
     try {
       const r = await fetch(API, {
@@ -1410,8 +1163,8 @@ async function importCSV(input) {
     await new Promise(r=>setTimeout(r,150));
   }
 
-  statusEl.textContent = `Done — ${imported} imported, ${duplicates} duplicates skipped, ${failed} failed, ${skipped} skipped`;
-  showToast(`Imported ${imported} items${duplicates?`, skipped ${duplicates} duplicates`:""}`);
+  statusEl.textContent = `Done — ${imported} imported, ${failed} failed, ${skipped} skipped`;
+  showToast(`Imported ${imported} items`);
   renderInventory(); populateFilters(); updateBadge();
 }
 
