@@ -763,6 +763,87 @@ async function flagItem(id) {
   }
 }
 
+function handleScan(item) {
+  currentItemId = item.id;
+  const wrap = document.getElementById("item-detail");
+
+  let action = null, targetStatus = null, icon = "", title = "", sub = "";
+  if(item.status === "In Stock") {
+    action = "flag"; targetStatus = "Needs Ordered";
+    icon = "🚨"; title = "Flagging as Needs Ordered";
+    sub = `${item.name} will be marked as needing to be reordered.`;
+  } else if(item.status === "Ordered") {
+    action = "issue"; targetStatus = "In Stock";
+    icon = "✅"; title = "Marking as In Stock";
+    sub = `${item.name} will be marked as received and back in stock.`;
+  } else {
+    // Needs Ordered or Issue — nothing to auto-toggle, show normal detail page
+    viewItem(item.id);
+    return;
+  }
+
+  let seconds = 3;
+  let cancelled = false;
+
+  wrap.innerHTML = `
+    <div class="flag-wrap">
+      <div class="flag-icon">${icon}</div>
+      <div class="flag-title">${title}</div>
+      <div class="flag-sub">${sub}</div>
+      <div style="font-size:13px;color:#9CA3AF;margin-bottom:16px">Applying in <span id="scan-secs">${seconds}</span>s...</div>
+      <button class="btn btn-gray flag-btn" onclick="cancelScanAction()">Cancel</button>
+    </div>`;
+
+  const countdownEl = document.getElementById("scan-secs");
+  const tick = setInterval(() => {
+    seconds--;
+    if(countdownEl) countdownEl.textContent = Math.max(seconds, 0);
+    if(seconds <= 0) clearInterval(tick);
+  }, 1000);
+
+  const commit = setTimeout(async () => {
+    if(cancelled) return;
+    const r = await fetch(`${API}?id=${item.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action })
+    });
+    if(r.ok) {
+      const updated = await r.json();
+      const idx = allItems.findIndex(i=>i.id===item.id);
+      if(idx>=0) allItems[idx] = updated;
+      updateBadge();
+      showScanSuccess(updated, targetStatus);
+    } else {
+      wrap.innerHTML = `<div class="flag-wrap"><div class="flag-icon">⚠️</div><div class="flag-title">Something went wrong</div><div class="flag-sub">Could not update status. Try again or open the item from the dashboard.</div><button class="btn btn-gray flag-btn" onclick="window.location='/'">Go to Dashboard</button></div>`;
+    }
+  }, seconds * 1000 + 50);
+
+  window._scanCancel = () => {
+    cancelled = true;
+    clearTimeout(commit);
+    clearInterval(tick);
+    viewItem(item.id);
+  };
+}
+
+function cancelScanAction() {
+  if(window._scanCancel) window._scanCancel();
+}
+
+function showScanSuccess(item, targetStatus) {
+  const wrap = document.getElementById("item-detail");
+  wrap.innerHTML = `
+    <div class="flag-wrap">
+      <div class="flag-success">
+        <div class="flag-icon">${targetStatus === "Needs Ordered" ? "🔴" : "🟢"}</div>
+        <div class="flag-title">Done!</div>
+        <div class="flag-sub">${item.name} is now marked as <strong>${targetStatus}</strong>.</div>
+        <button class="btn btn-gray flag-btn" style="margin-top:10px" onclick="viewItem('${item.id}')">View Item Details</button>
+      </div>
+    </div>`;
+}
+
 async function issueItem(id) {
   const r = await fetch(`${API}?id=${id}`, {
     method: "PUT",
@@ -1190,11 +1271,11 @@ function showToast(msg, error=false) {
 // ── Init ──────────────────────────────────────────────────────────────────
 const route = getPage();
 if(route.page === "item" && route.id) {
-  // QR scan destination — load items then show item
+  // QR scan destination — load items then auto-apply the status flip
   showPage("item");
   loadItems().then(() => {
     const item = allItems.find(i=>i.id===route.id);
-    if(item) viewItem(route.id);
+    if(item) handleScan(item);
     else document.getElementById("item-detail").innerHTML = `<div class="flag-wrap"><div class="flag-icon">❓</div><div class="flag-title">Item not found</div><div class="flag-sub">This QR code may be outdated.</div><button class="btn btn-gray flag-btn" onclick="window.location='/'">Go to Inventory</button></div>`;
   });
 } else {
