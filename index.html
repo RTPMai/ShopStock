@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ShopStock — P&M Apparel</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20144%20144'%3E%3Ccircle%20cx='72'%20cy='72'%20r='72'%20fill='%23E36325'/%3E%3Cpath%20fill='%23fff'%20d='M104.37,75.48c0-.43-.24-.83-.62-1.03l-16.95-9.07c-.16-.09-.16-.32,0-.41l10.94-6.14c.4-.22.64-.64.64-1.09v-13.07c0-.09-.09-.14-.18-.1l-25.75,13.57c-.35.19-.57.54-.57.94v13.86c0,.19.2.3.36.21l9.56-5.36c.2-.12.45-.12.66,0l15.15,8.11c.17.09.17.33,0,.42l-12.1,6.98c-.19.11-.41.11-.6,0l-15.34-8.21c-.06-.03-.1-.1-.1-.17v-17.19c0-.18.1-.35.26-.43l28.3-14.91c.06-.03.11-.08.15-.14.53-.78.29-1.45-.61-1.94-6.14-3.38-13.34-6.97-22.67-11.77-1.81-.94-3.49-1.73-5.02-2.37-.53-.23-1.14-.2-1.66.06l-27.87,14.33c-.43.23-.71.67-.71,1.17v21.85c0,.18.1.34.25.42l41.18,22.04c.18.09.18.34,0,.44l-15.19,8.77c-.28.16-.63.17-.91.01l-18.11-9.69c-.13-.07-.14-.26,0-.33l13.39-7.51c.19-.1.19-.38,0-.48l-3.51-1.87c-.28-.15-.63-.15-.92,0l-15.72,8.82c-.29.16-.47.47-.47.8,0,6.25,0,12.26-.04,18.03,0,.6.05,1.08.17,1.45.05.17.17.31.33.4,10.46,5.63,18.57,9.92,24.33,12.85.84.43,1.64.39,2.41-.11.52-.34.81-.94.88-1.82.06-.76.09-1.61.09-2.57.01-5.04-.01-9.14-.08-12.3-.01-.72.07-1.28.25-1.69.04-.09.11-.18.2-.23l15.37-8.88c.17-.1.39.02.39.22v1.72c0,.33-.18.64-.47.8l-13.18,7.61c-.21.12-.33.34-.33.58v14.49c0,.17.18.28.33.19l33.43-18.77c.23-.13.39-.34.44-.6.14-.68.21-1.47.21-2.35-.03-4.67-.04-10.84-.02-18.53ZM65.24,72.43c0,.15-.16.25-.3.18l-21.17-11.33c-.07-.04-.11-.1-.11-.18v-15.16c0-.15.16-.25.3-.18l21.17,11.33c.07.04.11.1.11.18v15.16ZM67.06,53.28l-20.18-10.79c-.23-.13-.23-.47,0-.6l22.16-11.39c.09-.05.21-.05.31,0l20.34,10.43c.24.12.24.47,0,.59l-22.33,11.76c-.1.05-.22.05-.32,0ZM63.56,112.28c0,.16-.17.26-.31.19l-19.43-10.4c-.07-.04-.11-.11-.11-.19v-12.85c0-.16.17-.26.31-.19l19.43,10.4c.07.04.11.11.11.19v12.85ZM100.43,93.77c0,.14-.07.26-.19.33l-11.6,6.7c-.25.15-.57-.04-.57-.33v-13.64c0-.14.07-.26.19-.33l11.6-6.7c.25-.15.57.04.57.33v13.64Z'/%3E%3C/svg%3E"/>
+<link rel="icon" type="image/svg+xml" sizes="any" href="/favicon.svg"/>
 <link rel="apple-touch-icon" href="/favicon.svg"/>
 <meta name="theme-color" content="#E36325"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
@@ -214,6 +215,7 @@ tr:hover td{background:#F9FAFB}
           <option value="Ordered">Ordered</option>
           <option value="Issue">Issue</option>
         </select>
+        <span id="bulk-count" style="font-size:12px;color:var(--accent);font-weight:600;white-space:nowrap"></span>
         <button class="btn btn-green btn-sm" onclick="bulkStatusChange()">Apply</button>
       </div>
       <button class="btn btn-green" onclick="openAddModal()">Add item</button>
@@ -522,7 +524,8 @@ function renderInventory() {
       <div class="dept-body">
         ${sec.items.length ? sec.items.map(item=>`
           <div class="order-card">
-            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sec.color};flex-shrink:0;margin-top:4px"></span>
+            <input type="checkbox" class="dash-check" data-id="${item.id}" onchange="updateBulkCount()" style="width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--accent)"/>
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sec.color};flex-shrink:0"></span>
             <div class="order-card-info">
               <div class="order-card-name" style="cursor:pointer;color:var(--accent);font-weight:600" onclick="viewItem('${item.id}')">${item.name}</div>
               <div class="order-card-meta">${item.department||""} · ${item.supplier||"No supplier"} · ${item.unit||""}</div>
@@ -704,6 +707,52 @@ async function updateStatus(id, status) {
   } else {
     showToast("Failed — check admin key", true);
   }
+}
+
+// ── Bulk status change (dashboard) ────────────────────────────────────────
+function getDashSelection() {
+  return [...document.querySelectorAll(".dash-check:checked")].map(c=>c.dataset.id);
+}
+
+function updateBulkCount() {
+  const n = getDashSelection().length;
+  const el = document.getElementById("bulk-count");
+  if(el) el.textContent = n ? `${n} selected` : "";
+}
+
+async function bulkStatusChange() {
+  const sel = document.getElementById("bulk-status-select");
+  const status = sel ? sel.value : "";
+  const ids = getDashSelection();
+
+  // Explicit selection required — no select-all fallback
+  if(!ids.length) { showToast("Select at least one item first", true); return; }
+  if(!status) { showToast("Choose a status to apply", true); return; }
+  if(!adminKey) { showToast("Admin key required — set it in Admin", true); return; }
+
+  showToast(`Updating ${ids.length} item${ids.length!==1?"s":""}...`);
+
+  let ok = 0, fail = 0;
+  for(const id of ids) {
+    try {
+      const r = await fetch(`${API}?id=${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ status })
+      });
+      if(r.ok) {
+        const updated = await r.json();
+        const idx = allItems.findIndex(i=>i.id===id);
+        if(idx>=0) allItems[idx] = updated;
+        ok++;
+      } else { fail++; }
+    } catch(e) { fail++; }
+  }
+
+  if(sel) sel.value = "";
+  updateBadge(); renderInventory(); renderQueue();
+  updateBulkCount();
+  showToast(fail ? `${ok} updated, ${fail} failed — check admin key` : `${ok} item${ok!==1?"s":""} marked as ${status}`, fail>0);
 }
 
 // ── Item detail ───────────────────────────────────────────────────────────
