@@ -4,27 +4,50 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ShopStock — P&M Apparel</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="apple-touch-icon" href="/favicon.svg"/>
+<meta name="theme-color" content="#E36325"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
+:root{
+  /* Shared family tokens — identical across BackBone, ShopStock, ErrorEngine */
+  --bg:#F4F6F8;
+  --card:#FFFFFF;
+  --ink:#1C2430;
+  --muted:#6B7684;
+  --line:#E4E8EC;
+  --success:#3D9A5C;
+  --wordmark-ink:#231F20;
+  --radius-sm:8px;
+  --radius-md:12px;
+  /* Per-app accent — ShopStock orange */
+  --accent:#E36325;
+  --accent-deep:#C24F16;
+  --accent-tint:#FCEEE6;
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:#F4F6F8;color:#111827;font-family:'Inter',sans-serif;font-size:14px}
-.hdr{background:#fff;border-bottom:1px solid #E5E7EB;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
-.logo{display:flex;align-items:center;gap:10px}
-.logomark{width:32px;height:32px;background:#3D9A5C;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;letter-spacing:-1px}
-.hdr-title{font-size:15px;font-weight:700}
-.hdr-sub{font-size:12px;color:#6B7280}
-.nav{display:flex;align-items:center;gap:4px}
-.nav-btn{border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;background:transparent;color:#6B7280;position:relative;transition:all .15s}
-.nav-btn:hover{background:#F3F4F6;color:#111827}
-.nav-btn.active{background:#EAF5EE;color:#3D9A5C;font-weight:600}
-.badge{position:absolute;top:2px;right:2px;background:#DC2626;color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center}
-.btn{border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
-.btn-green{background:#3D9A5C;color:#fff}.btn-green:hover{background:#2F7A48}
-.btn-gray{background:#F3F4F6;color:#374151;border:1px solid #E5E7EB}.btn-gray:hover{background:#E5E7EB}
-.btn-red{background:#FEE2E2;color:#DC2626;border:1px solid #FECACA}.btn-red:hover{background:#FECACA}
-.btn-amber{background:#FEF3C7;color:#D97706;border:1px solid #FDE68A}.btn-amber:hover{background:#FDE68A}
-.btn-sm{padding:5px 10px;font-size:12px}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+.hdr{background:var(--card);border-bottom:1px solid var(--line);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.logomark{width:36px;height:36px;flex:none}
+.logomark svg{width:36px;height:36px;display:block}
+.wordmark{font-size:18px;font-weight:800;letter-spacing:-.01em;line-height:1}
+.wordmark .w1{color:var(--accent)}
+.wordmark .w2{color:var(--wordmark-ink)}
+.wordmark .dot{color:var(--accent)}
+.hdr-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.nav{display:flex;align-items:center;gap:22px}
+.nav-btn{border:none;padding:4px 0 6px;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:600;background:transparent;color:var(--muted);position:relative;transition:color .15s}
+.nav-btn:hover{color:var(--ink)}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.badge{position:absolute;top:-6px;right:-14px;background:#C0392B;color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center}
+.btn{border:none;padding:9px 18px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+.btn-green{background:var(--accent);color:#fff}.btn-green:hover{background:var(--accent-deep)}
+.btn-gray{background:#fff;color:var(--accent-deep);border:1px solid var(--line)}.btn-gray:hover{background:#F3F4F6}
+.btn-red{background:#FDECEA;color:#C0392B;border:1px solid #F5C6C0}.btn-red:hover{background:#F9D9D4}
+.btn-amber{background:#FEF6E0;color:#A67C00;border:1px solid #F5E4B0}.btn-amber:hover{background:#FBEEC8}
+.btn-sm{padding:5px 12px;font-size:12px}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 
 /* Pages */
@@ -32,92 +55,93 @@ body{background:#F4F6F8;color:#111827;font-family:'Inter',sans-serif;font-size:1
 
 /* Search/filter bar */
 .toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
-.search-input{background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:8px 14px;font-size:13px;color:#111827;outline:none;width:260px}
-.search-input:focus{border-color:#3D9A5C;box-shadow:0 0 0 3px #EAF5EE}
-.filter-select{background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:8px 12px;font-size:13px;color:#374151;outline:none;cursor:pointer}
-.filter-select:focus{border-color:#3D9A5C}
+.search-input{background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 14px;font-size:13px;color:var(--ink);outline:none;width:260px}
+.search-input:focus{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:-1px}
+.filter-select{background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;color:var(--ink);outline:none;cursor:pointer}
+.filter-select:focus{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:-1px}
 
 /* Stats row */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
-.stat{background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:16px 20px}
-.stat-lbl{font-size:12px;color:#6B7280;font-weight:500;margin-bottom:4px}
-.stat-val{font-size:24px;font-weight:700;letter-spacing:-.5px}
-.stat-sub{font-size:11px;color:#9CA3AF;margin-top:3px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);padding:16px 20px}
+.stat-lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
 
 /* Table */
-.card{background:#fff;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;margin-bottom:16px}
-.card-hd{padding:14px 20px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between}
-.card-hd h3{font-size:14px;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px}
+.card-hd{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.card-hd h3{font-size:15px;font-weight:700}
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:#6B7280;padding:10px 14px;font-weight:600;background:#F9FAFB;border-bottom:1px solid #E5E7EB;cursor:pointer;white-space:nowrap;user-select:none}
-th:hover{color:#111827}
-td{padding:11px 14px;border-bottom:1px solid #F3F4F6;color:#111827;vertical-align:middle}
+th{text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:10px 14px;font-weight:600;background:#F9FAFB;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{color:var(--ink)}
+td{padding:11px 14px;border-bottom:1px solid var(--line);color:var(--ink);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#F9FAFB}
 
 /* Status pills */
-.status{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
-.s-stock{background:#EAF5EE;color:#3D9A5C}
-.s-need{background:#FEE2E2;color:#DC2626}
-.s-ordered{background:#FEF3C7;color:#D97706}
-.s-issue{background:#EFF6FF;color:#2563EB}
+.status{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.s-stock{background:#E7F5EC;color:var(--success)}
+.s-need{background:#FDECEA;color:#C0392B}
+.s-ordered{background:#FEF6E0;color:#A67C00}
+.s-issue{background:#EEE9F5;color:#5B4788}
 
 /* Item detail page */
-.item-hero{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:28px;margin-bottom:20px}
-.item-name{font-size:26px;font-weight:700;margin-bottom:6px}
-.item-meta{font-size:13px;color:#6B7280;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.item-hero{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);padding:28px;margin-bottom:20px}
+.item-name{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.item-meta{font-size:13px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px}
 .item-actions{display:flex;gap:10px;flex-wrap:wrap}
 .item-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.info-card{background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:18px}
-.info-card h4{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6B7280;margin-bottom:12px}
-.info-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F3F4F6;font-size:13px}
+.info-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);padding:20px}
+.info-card h4{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:12px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
 .info-row:last-child{border-bottom:none}
-.info-row .lbl{color:#6B7280}
+.info-row .lbl{color:var(--muted)}
 .info-row .val{font-weight:500}
 .price-history{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto}
-.ph-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid #F3F4F6}
+.ph-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line)}
 .ph-row:last-child{border-bottom:none}
 
 /* QR */
-.qr-wrap{background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:20px;text-align:center;display:inline-block}
+.qr-wrap{background:#fff;border:1px solid var(--line);border-radius:var(--radius-md);padding:20px;text-align:center;display:inline-block}
 .qr-wrap canvas{display:block;margin:0 auto 8px}
 
 /* Modal */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
 .overlay.open{display:flex}
-.modal{background:#fff;border-radius:12px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;max-height:90vh;overflow-y:auto}
-.modal-hd{padding:18px 24px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.modal{background:#fff;border-radius:var(--radius-md);width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;max-height:90vh;overflow-y:auto}
+.modal-hd{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
 .modal-hd h2{font-size:16px;font-weight:700}
-.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:#6B7280;line-height:1;padding:2px}
-.modal-close:hover{color:#111827}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;padding:2px}
+.modal-close:hover{color:var(--ink)}
 .modal-bd{padding:20px}
 .field{margin-bottom:16px}
-.field label{display:block;font-size:12px;font-weight:600;color:#6B7280;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
-.field input,.field select,.field textarea{width:100%;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:7px;padding:9px 12px;font-size:13px;color:#111827;outline:none;font-family:inherit}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:#3D9A5C;box-shadow:0 0 0 3px #EAF5EE;background:#fff}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.field label .req{color:var(--accent)}
+.field input,.field select,.field textarea{width:100%;background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--ink);outline:none;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:-1px;background:#fff}
 .field textarea{resize:vertical;min-height:72px}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.modal-footer{padding:14px 20px;border-top:1px solid #E5E7EB;display:flex;gap:10px;justify-content:flex-end;background:#F9FAFB}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:#F9FAFB}
 
 /* Flag page (QR scan destination) */
 .flag-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center}
 .flag-icon{font-size:64px;margin-bottom:16px}
 .flag-title{font-size:24px;font-weight:700;margin-bottom:8px}
-.flag-sub{font-size:15px;color:#6B7280;margin-bottom:32px;max-width:340px;line-height:1.6}
+.flag-sub{font-size:15px;color:var(--muted);margin-bottom:32px;max-width:340px;line-height:1.6}
 .flag-btn{font-size:18px;padding:16px 40px;border-radius:10px;width:100%;max-width:320px;justify-content:center}
-.flag-success{background:#EAF5EE;border-radius:12px;padding:24px;max-width:360px;width:100%}
+.flag-success{background:#E7F5EC;border-radius:var(--radius-md);padding:24px;max-width:360px;width:100%}
 
 /* Order queue */
-.queue-item{background:#fff;border:1px solid #E5E7EB;border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:16px;margin-bottom:10px}
-.queue-item:hover{border-color:#3D9A5C}
+.queue-item{background:#fff;border:1px solid var(--line);border-radius:var(--radius-md);padding:16px 20px;display:flex;align-items:center;gap:16px;margin-bottom:10px}
+.queue-item:hover{border-color:var(--accent)}
 .queue-info{flex:1}
 .queue-name{font-size:14px;font-weight:600;margin-bottom:2px}
-.queue-meta{font-size:12px;color:#6B7280}
+.queue-meta{font-size:12px;color:var(--muted)}
 .queue-actions{display:flex;gap:8px}
 
 /* Toast */
-.toast{position:fixed;bottom:24px;right:24px;background:#111827;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.show{opacity:1}
 
 /* Empty state */
@@ -128,7 +152,7 @@ tr:hover td{background:#F9FAFB}
 @media(max-width:600px){.item-grid{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
 
 /* Department sections */
-.dept-section{margin-bottom:16px;border-radius:10px;overflow:hidden;border:2px solid #E5E7EB}
+.dept-section{margin-bottom:16px;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--line)}
 .dept-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;font-weight:600;font-size:14px}
 .dept-header:hover{filter:brightness(.97)}
 .dept-toggle{font-size:18px;transition:transform .2s;line-height:1}
@@ -143,14 +167,14 @@ tr:hover td{background:#F9FAFB}
 .order-card:hover{background:#FAFAFA}
 .order-card-info{flex:1;min-width:0}
 .order-card-name{font-weight:600;font-size:14px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.order-card-meta{font-size:12px;color:#6B7280}
-.order-card-price{font-size:15px;font-weight:700;color:#111827;white-space:nowrap}
+.order-card-meta{font-size:12px;color:var(--muted)}
+.order-card-price{font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap}
 .order-card-actions{display:flex;gap:6px;flex-shrink:0}
 .empty-dept{padding:20px;text-align:center;color:#9CA3AF;font-size:13px}
 .empty-star-wrap{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:14px;padding:26px 20px}
 .empty-star{width:80px;height:80px;flex-shrink:0}
 .empty-star svg{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.08))}
-.empty-star-text{font-size:15px;font-weight:700;color:#111827;font-family:'Inter',sans-serif}
+.empty-star-text{font-size:15px;font-weight:700;color:var(--ink);font-family:'Inter',sans-serif}
 
 /* Dashboard side-by-side sections */
 .dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
@@ -161,8 +185,8 @@ tr:hover td{background:#F9FAFB}
 
 <div class="hdr">
   <div class="logo">
-    <div class="logomark">SS</div>
-    <div><div class="hdr-title">ShopStock</div><div class="hdr-sub">P&amp;M Apparel</div></div>
+    <div class="logomark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144"><circle cx="72" cy="72" r="72" fill="#E36325"/><path fill="#fff" d="M104.37,75.48c0-.43-.24-.83-.62-1.03l-16.95-9.07c-.16-.09-.16-.32,0-.41l10.94-6.14c.4-.22.64-.64.64-1.09v-13.07c0-.09-.09-.14-.18-.1l-25.75,13.57c-.35.19-.57.54-.57.94v13.86c0,.19.2.3.36.21l9.56-5.36c.2-.12.45-.12.66,0l15.15,8.11c.17.09.17.33,0,.42l-12.1,6.98c-.19.11-.41.11-.6,0l-15.34-8.21c-.06-.03-.1-.1-.1-.17v-17.19c0-.18.1-.35.26-.43l28.3-14.91c.06-.03.11-.08.15-.14.53-.78.29-1.45-.61-1.94-6.14-3.38-13.34-6.97-22.67-11.77-1.81-.94-3.49-1.73-5.02-2.37-.53-.23-1.14-.2-1.66.06l-27.87,14.33c-.43.23-.71.67-.71,1.17v21.85c0,.18.1.34.25.42l41.18,22.04c.18.09.18.34,0,.44l-15.19,8.77c-.28.16-.63.17-.91.01l-18.11-9.69c-.13-.07-.14-.26,0-.33l13.39-7.51c.19-.1.19-.38,0-.48l-3.51-1.87c-.28-.15-.63-.15-.92,0l-15.72,8.82c-.29.16-.47.47-.47.8,0,6.25,0,12.26-.04,18.03,0,.6.05,1.08.17,1.45.05.17.17.31.33.4,10.46,5.63,18.57,9.92,24.33,12.85.84.43,1.64.39,2.41-.11.52-.34.81-.94.88-1.82.06-.76.09-1.61.09-2.57.01-5.04-.01-9.14-.08-12.3-.01-.72.07-1.28.25-1.69.04-.09.11-.18.2-.23l15.37-8.88c.17-.1.39.02.39.22v1.72c0,.33-.18.64-.47.8l-13.18,7.61c-.21.12-.33.34-.33.58v14.49c0,.17.18.28.33.19l33.43-18.77c.23-.13.39-.34.44-.6.14-.68.21-1.47.21-2.35-.03-4.67-.04-10.84-.02-18.53ZM65.24,72.43c0,.15-.16.25-.3.18l-21.17-11.33c-.07-.04-.11-.1-.11-.18v-15.16c0-.15.16-.25.3-.18l21.17,11.33c.07.04.11.1.11.18v15.16ZM67.06,53.28l-20.18-10.79c-.23-.13-.23-.47,0-.6l22.16-11.39c.09-.05.21-.05.31,0l20.34,10.43c.24.12.24.47,0,.59l-22.33,11.76c-.1.05-.22.05-.32,0ZM63.56,112.28c0,.16-.17.26-.31.19l-19.43-10.4c-.07-.04-.11-.11-.11-.19v-12.85c0-.16.17-.26.31-.19l19.43,10.4c.07.04.11.11.11.19v12.85ZM100.43,93.77c0,.14-.07.26-.19.33l-11.6,6.7c-.25.15-.57-.04-.57-.33v-13.64c0-.14.07-.26.19-.33l11.6-6.7c.25-.15.57.04.57.33v13.64Z"/></svg></div>
+    <div><div class="wordmark"><span class="w1">Shop</span><span class="w2">Stock</span><span class="dot">.</span></div><div class="hdr-sub">P&amp;M Apparel</div></div>
   </div>
   <div class="nav">
     <button class="nav-btn active" id="nav-inventory" onclick="showPage('inventory',this)">
@@ -177,13 +201,13 @@ tr:hover td{background:#F9FAFB}
 <div id="page-inventory" class="page active">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
     <div>
-      <div style="font-size:22px;font-weight:700">Dashboard</div>
-      <div style="font-size:13px;color:#6B7280;margin-top:2px" id="inv-sub"></div>
+      <div style="font-size:28px;font-weight:800;letter-spacing:-.02em">Dashboard.</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:2px" id="inv-sub"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:6px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:6px 10px">
-        <span style="font-size:12px;color:#6B7280;white-space:nowrap">Bulk:</span>
-        <select id="bulk-status-select" style="border:none;background:transparent;font-size:12px;color:#374151;outline:none;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:6px;background:#F9FAFB;border:1px solid var(--line);border-radius:8px;padding:6px 10px">
+        <span style="font-size:12px;color:var(--muted);white-space:nowrap">Bulk:</span>
+        <select id="bulk-status-select" style="border:none;background:transparent;font-size:12px;color:var(--ink);outline:none;cursor:pointer">
           <option value="">Change selected to...</option>
           <option value="In Stock">In Stock</option>
           <option value="Needs Ordered">Needs Ordered</option>
@@ -192,7 +216,7 @@ tr:hover td{background:#F9FAFB}
         </select>
         <button class="btn btn-green btn-sm" onclick="bulkStatusChange()">Apply</button>
       </div>
-      <button class="btn btn-green" onclick="openAddModal()">+ Add Item</button>
+      <button class="btn btn-green" onclick="openAddModal()">Add item</button>
     </div>
   </div>
   <div class="stats" id="inv-stats"></div>
@@ -203,8 +227,8 @@ tr:hover td{background:#F9FAFB}
 <div id="page-full" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
     <div>
-      <div style="font-size:22px;font-weight:700">Full Inventory</div>
-      <div style="font-size:13px;color:#6B7280;margin-top:2px" id="full-sub"></div>
+      <div style="font-size:28px;font-weight:800;letter-spacing:-.02em">Full inventory.</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:2px" id="full-sub"></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input class="search-input" id="full-search" placeholder="Search items..." oninput="renderFullInventory()"/>
@@ -212,7 +236,7 @@ tr:hover td{background:#F9FAFB}
         <option value="">All Suppliers</option>
       </select>
       <button class="btn btn-gray" onclick="bulkPrintQR()" title="Print QR codes for checked items, or all items if none checked">🖨️ Print QR Codes</button>
-      <button class="btn btn-green" onclick="openAddModal()">+ Add Item</button>
+      <button class="btn btn-green" onclick="openAddModal()">Add item</button>
     </div>
   </div>
   <div id="full-inventory-list"></div>
@@ -220,8 +244,8 @@ tr:hover td{background:#F9FAFB}
 
 <!-- Order Queue page -->
 <div id="page-queue" class="page">
-  <div style="font-size:22px;font-weight:700;margin-bottom:4px">Order Queue</div>
-  <div style="font-size:13px;color:#6B7280;margin-bottom:24px">Items flagged as needing to be ordered</div>
+  <div style="font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px">Order queue.</div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Items flagged as needing to be ordered</div>
   <div id="queue-list"></div>
 </div>
 
@@ -232,17 +256,17 @@ tr:hover td{background:#F9FAFB}
 
 <!-- Admin page -->
 <div id="page-admin" class="page">
-  <div style="font-size:22px;font-weight:700;margin-bottom:4px">Admin</div>
-  <div style="font-size:13px;color:#6B7280;margin-bottom:24px">Manage settings, trigger price scraping, and configure ShopStock</div>
+  <div style="font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px">Admin.</div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Manage settings, trigger price scraping, and configure ShopStock</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1100px">
     <div class="card">
       <div class="card-hd"><h3>Departments & Colors</h3></div>
       <div style="padding:16px">
-        <div style="font-size:12px;color:#6B7280;margin-bottom:12px">Add departments and customize their colors. These are used throughout the dashboard.</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Add departments and customize their colors. These are used throughout the dashboard.</div>
         <div id="dept-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
         <div style="display:flex;gap:8px">
-          <input type="text" id="new-dept-name" placeholder="Department name" style="flex:1;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:7px;padding:8px 12px;font-size:13px;outline:none"/>
-          <input type="color" id="new-dept-color" value="#3D9A5C" style="width:40px;height:36px;border:1px solid #E5E7EB;border-radius:7px;cursor:pointer;padding:2px"/>
+          <input type="text" id="new-dept-name" placeholder="Department name" style="flex:1;background:#F9FAFB;border:1px solid var(--line);border-radius:7px;padding:8px 12px;font-size:13px;outline:none"/>
+          <input type="color" id="new-dept-color" value="#3D9A5C" style="width:40px;height:36px;border:1px solid var(--line);border-radius:7px;cursor:pointer;padding:2px"/>
           <button class="btn btn-green btn-sm" onclick="addDepartment()">Add</button>
         </div>
       </div>
@@ -250,10 +274,10 @@ tr:hover td{background:#F9FAFB}
     <div class="card">
       <div class="card-hd"><h3>Categories</h3></div>
       <div style="padding:16px">
-        <div style="font-size:12px;color:#6B7280;margin-bottom:12px">Add categories to organize items within departments.</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Add categories to organize items within departments.</div>
         <div id="cat-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
         <div style="display:flex;gap:8px">
-          <input type="text" id="new-cat-name" placeholder="Category name" style="flex:1;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:7px;padding:8px 12px;font-size:13px;outline:none"/>
+          <input type="text" id="new-cat-name" placeholder="Category name" style="flex:1;background:#F9FAFB;border:1px solid var(--line);border-radius:7px;padding:8px 12px;font-size:13px;outline:none"/>
           <button class="btn btn-green btn-sm" onclick="addCategory()">Add</button>
         </div>
       </div>
@@ -266,14 +290,14 @@ tr:hover td{background:#F9FAFB}
           <input type="password" id="admin-key-input" placeholder="Enter admin key"/>
         </div>
         <button class="btn btn-green" onclick="saveAdminKey()" style="margin-bottom:10px">Save Admin Key</button>
-        <div style="font-size:12px;color:#6B7280">The admin key is set in your Vercel environment variables as ADMIN_KEY. Enter it here to unlock admin features.</div>
+        <div style="font-size:12px;color:var(--muted)">The admin key is set in your Vercel environment variables as ADMIN_KEY. Enter it here to unlock admin features.</div>
         <div style="margin-top:10px;font-size:13px;font-weight:600" id="admin-status"></div>
       </div>
     </div>
     <div class="card">
       <div class="card-hd"><h3>Price Scraping</h3></div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
-        <div style="font-size:13px;color:#6B7280">Automatically check supplier URLs and update prices where possible.</div>
+        <div style="font-size:13px;color:var(--muted)">Automatically check supplier URLs and update prices where possible.</div>
         <button class="btn btn-green btn-sm" onclick="runScrape()">Run Price Scrape Now</button>
         <div style="font-size:12px;color:#9CA3AF" id="scrape-status"></div>
       </div>
@@ -281,7 +305,7 @@ tr:hover td{background:#F9FAFB}
     <div class="card">
       <div class="card-hd"><h3>Import from CSV</h3></div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
-        <div style="font-size:13px;color:#6B7280">Upload a CSV to bulk-import items. Columns: name, department, category, supplier, supplierLink, unit, currentPrice, notes</div>
+        <div style="font-size:13px;color:var(--muted)">Upload a CSV to bulk-import items. Columns: name, department, category, supplier, supplierLink, unit, currentPrice, notes</div>
         <input type="file" id="csv-input" accept=".csv"/>
         <button class="btn btn-green btn-sm" onclick="importCSV(document.getElementById('csv-input'))" style="margin-top:8px">Import CSV</button>
         <div style="font-size:12px;color:#9CA3AF;margin-top:8px" id="import-status"></div>
@@ -290,7 +314,7 @@ tr:hover td{background:#F9FAFB}
     <div class="card">
       <div class="card-hd"><h3>Export</h3></div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
-        <div style="font-size:13px;color:#6B7280">Export all inventory data as CSV.</div>
+        <div style="font-size:13px;color:var(--muted)">Export all inventory data as CSV.</div>
         <button class="btn btn-gray btn-sm" onclick="exportCSV()">Export to CSV</button>
       </div>
     </div>
@@ -307,7 +331,7 @@ tr:hover td{background:#F9FAFB}
     <div class="modal-bd">
       <input type="hidden" id="edit-id"/>
       <div class="field-row">
-        <div class="field"><label>Item Name *</label><input type="text" id="f-name" placeholder="e.g. PMS Process Blue"/></div>
+        <div class="field"><label>Item name <span class="req">*</span></label><input type="text" id="f-name" placeholder="e.g. PMS Process Blue"/></div>
         <div class="field"><label>Department</label>
           <select id="f-dept"></select>
         </div>
@@ -343,7 +367,7 @@ tr:hover td{background:#F9FAFB}
     </div>
     <div class="modal-bd" style="display:flex;flex-direction:column;align-items:center;gap:16px">
       <div class="qr-wrap"><div id="qr-code"></div></div>
-      <div style="font-size:12px;color:#6B7280" id="qr-url"></div>
+      <div style="font-size:12px;color:var(--muted)" id="qr-url"></div>
       <button class="btn btn-green" onclick="printQR()">Print QR Code</button>
     </div>
   </div>
@@ -410,7 +434,7 @@ function deptColor(dept) {
   const colors = getDeptColors();
   const hex = colors[dept];
   if(hex) return colorVariants(hex);
-  return { bg: "#F3F4F6", border: "#9CA3AF", text: "#374151", dot: "#9CA3AF" };
+  return { bg: "#F3F4F6", border: "#9CA3AF", text: "var(--ink)", dot: "#9CA3AF" };
 }
 function deptBadge(dept) {
   const c = deptColor(dept);
@@ -469,9 +493,9 @@ function renderInventory() {
 
   document.getElementById("inv-stats").innerHTML = `
     <div class="stat"><div class="stat-lbl">Total Items</div><div class="stat-val">${allItems.length}</div><div class="stat-sub">across all departments</div></div>
-    <div class="stat"><div class="stat-lbl">Needs Ordered</div><div class="stat-val" style="color:#DC2626">${needOrder}</div><div class="stat-sub">flagged for reorder</div></div>
-    <div class="stat"><div class="stat-lbl">On Order</div><div class="stat-val" style="color:#D97706">${ordered}</div><div class="stat-sub">awaiting arrival</div></div>
-    <div class="stat"><div class="stat-lbl">In Stock</div><div class="stat-val" style="color:#3D9A5C">${allItems.length - needOrder - ordered}</div><div class="stat-sub">all good</div></div>
+    <div class="stat"><div class="stat-lbl">Needs Ordered</div><div class="stat-val" style="color:#C0392B">${needOrder}</div><div class="stat-sub">flagged for reorder</div></div>
+    <div class="stat"><div class="stat-lbl">On Order</div><div class="stat-val" style="color:var(--accent)">${ordered}</div><div class="stat-sub">awaiting arrival</div></div>
+    <div class="stat"><div class="stat-lbl">In Stock</div><div class="stat-val" style="color:var(--success)">${allItems.length - needOrder - ordered}</div><div class="stat-sub">all good</div></div>
   `;
   document.getElementById("inv-sub").textContent = `${needOrder} items need ordering · ${ordered} on order`;
 
@@ -500,13 +524,13 @@ function renderInventory() {
           <div class="order-card">
             <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sec.color};flex-shrink:0;margin-top:4px"></span>
             <div class="order-card-info">
-              <div class="order-card-name" style="cursor:pointer;color:#3D9A5C" onclick="viewItem('${item.id}')">${item.name}</div>
+              <div class="order-card-name" style="cursor:pointer;color:var(--accent);font-weight:600" onclick="viewItem('${item.id}')">${item.name}</div>
               <div class="order-card-meta">${item.department||""} · ${item.supplier||"No supplier"} · ${item.unit||""}</div>
             </div>
             <div class="order-card-price">$${(item.currentPrice||0).toFixed(2)}</div>
             <div class="order-card-actions">
               ${item.supplierLink&&!item.supplierLink.startsWith("email")&&!item.supplierLink.startsWith("EMAIL")?`<a href="${item.supplierLink}" target="_blank" class="btn btn-gray btn-sm" style="text-decoration:none">🛒 Order</a>`:""}
-              <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:5px 8px;font-size:12px;cursor:pointer;outline:none">
+              <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:12px;cursor:pointer;outline:none">
                 <option value="In Stock">In Stock</option>
                 <option value="Needs Ordered" ${item.status==="Needs Ordered"?"selected":""}>Needs Ordered</option>
                 <option value="Ordered" ${item.status==="Ordered"?"selected":""}>Ordered</option>
@@ -516,7 +540,7 @@ function renderInventory() {
           </div>`).join("") : `<div class="empty-star-wrap">
             <div class="empty-star">
               <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="46,3 58,33 96,36 66,55 74,92 45,70 12,90 22,53 2,32 40,30" fill="#FDB913" stroke="#111827" stroke-width="1.6" stroke-linejoin="round"/>
+                <polygon points="46,3 58,33 96,36 66,55 74,92 45,70 12,90 22,53 2,32 40,30" fill="#FDB913" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>
               </svg>
             </div>
             <span class="empty-star-text">Your Did It!</span>
@@ -574,24 +598,24 @@ function renderFullInventory() {
             ${deptItems.map(item=>`<tr>
               <td><input type="checkbox" class="bulk-check" data-id="${item.id}"/></td>
               <td style="overflow:hidden;cursor:pointer" onclick="viewItem('${item.id}')">
-                <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3D9A5C">${item.name}</div>
+                <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--accent)">${item.name}</div>
                 ${item.category?`<div style="font-size:11px;color:#9CA3AF">${item.category}</div>`:""}
               </td>
               <td style="overflow:hidden">
                 <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:3px">${item.supplier||"—"}</div>
-                ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")&&!item.supplierLink.startsWith("email")?`<a href="${item.supplierLink}" target="_blank" style="display:inline-block;padding:2px 8px;background:#EAF5EE;color:#3D9A5C;border:1px solid #BBF7D0;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none">🛒 Order</a>`:item.supplierLink?`<span style="font-size:11px;color:#9CA3AF">📧 Email order</span>`:""}
+                ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")&&!item.supplierLink.startsWith("email")?`<a href="${item.supplierLink}" target="_blank" style="display:inline-block;padding:2px 8px;background:var(--accent-tint);color:var(--accent-deep);border:1px solid #F5D3C0;border-radius:4px;font-size:11px;font-weight:600;text-decoration:none">🛒 Order</a>`:item.supplierLink?`<span style="font-size:11px;color:#9CA3AF">📧 Email order</span>`:""}
               </td>
               <td style="font-weight:600">$${(item.currentPrice||0).toFixed(2)}</td>
-              <td style="color:#6B7280">${item.unit||"—"}</td>
+              <td style="color:var(--muted)">${item.unit||"—"}</td>
               <td>
-                <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:4px 6px;font-size:12px;cursor:pointer;outline:none">
+                <select onchange="updateStatus('${item.id}',this.value)" style="background:#F9FAFB;border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:12px;cursor:pointer;outline:none">
                   <option value="In Stock" ${(item.status||"In Stock")==="In Stock"?"selected":""}>In Stock</option>
                   <option value="Needs Ordered" ${item.status==="Needs Ordered"?"selected":""}>Needs Ordered</option>
                   <option value="Ordered" ${item.status==="Ordered"?"selected":""}>Ordered</option>
                   <option value="Issue" ${item.status==="Issue"?"selected":""}>Issue</option>
                 </select>
               </td>
-              <td style="color:#6B7280">${item.lastOrdered?new Date(item.lastOrdered).toLocaleDateString():"Never"}</td>
+              <td style="color:var(--muted)">${item.lastOrdered?new Date(item.lastOrdered).toLocaleDateString():"Never"}</td>
               <td style="text-align:center">${item.timesOrderedYTD||0}</td>
               <td>
                 <div style="display:flex;gap:4px">
@@ -654,7 +678,7 @@ function renderQueue() {
       <div class="queue-info">
         <div class="queue-name">${item.name}</div>
         <div class="queue-meta">${item.department||""} · ${item.supplier||"No supplier"} · $${(item.currentPrice||0).toFixed(2)} ${item.unit||""}</div>
-        ${item.supplierLink?`<a href="${item.supplierLink}" target="_blank" style="font-size:12px;color:#3D9A5C">Open supplier page →</a>`:""}
+        ${item.supplierLink?`<a href="${item.supplierLink}" target="_blank" style="font-size:12px;color:var(--accent)">Open supplier page →</a>`:""}
       </div>
       <div class="queue-actions">
         ${item.status==="Needs Ordered"?`<button class="btn btn-amber btn-sm" onclick="updateStatus('${item.id}','Ordered')">Mark Ordered</button>`:""}
@@ -703,7 +727,7 @@ function viewItem(id) {
             <span><span class="status ${statusClass(item.status)}">${statusDot(item.status)} ${item.status||"In Stock"}</span></span>
           </div>
         </div>
-        <div style="font-size:32px;font-weight:700;color:#3D9A5C">$${(item.currentPrice||0).toFixed(2)}</div>
+        <div style="font-size:32px;font-weight:800;letter-spacing:-.02em;color:var(--ink)">$${(item.currentPrice||0).toFixed(2)}</div>
       </div>
       <div class="item-actions">
         ${item.status==="In Stock"?
@@ -730,7 +754,7 @@ function viewItem(id) {
         <div class="info-row"><span class="lbl">Supplier</span><span class="val">${item.supplier||"—"}</span></div>
         <div class="info-row"><span class="lbl">Supplier Link</span><span class="val" style="max-width:200px;overflow:hidden;text-overflow:ellipsis">
           ${item.supplierLink&&!item.supplierLink.startsWith("EMAIL")&&!item.supplierLink.startsWith("email")
-            ?`<a href="${item.supplierLink}" target="_blank" style="color:#3D9A5C;word-break:break-all">${item.supplierLink}</a>`
+            ?`<a href="${item.supplierLink}" target="_blank" style="color:var(--accent);word-break:break-all">${item.supplierLink}</a>`
             :item.supplierLink?item.supplierLink:"—"}
         </span></div>
         <div class="info-row"><span class="lbl">Last Ordered</span><span class="val">${item.lastOrdered?new Date(item.lastOrdered).toLocaleDateString():"Never"}</span></div>
@@ -862,7 +886,7 @@ function showQR(id) {
   document.getElementById("qr-title").textContent = item.name;
   document.getElementById("qr-url").textContent = url;
   document.getElementById("qr-code").innerHTML = "";
-  new QRCode(document.getElementById("qr-code"), { text: url, width: 200, height: 200, colorDark: "#111827", colorLight: "#ffffff" });
+  new QRCode(document.getElementById("qr-code"), { text: url, width: 200, height: 200, colorDark: "var(--ink)", colorLight: "#ffffff" });
   document.getElementById("qr-modal").classList.add("open");
 }
 
@@ -987,7 +1011,7 @@ function renderDeptList() {
     const hex = colors[d] || "#9CA3AF";
     return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F3F4F6">
       <input type="color" value="${hex}" onchange="updateDeptColor('${d}',this.value)"
-        style="width:32px;height:28px;border:1px solid #E5E7EB;border-radius:5px;cursor:pointer;padding:1px"/>
+        style="width:32px;height:28px;border:1px solid var(--line);border-radius:5px;cursor:pointer;padding:1px"/>
       <span style="flex:1;font-size:13px;font-weight:500">${d}</span>
       <span style="font-size:11px;color:#9CA3AF">${allItems.filter(i=>i.department===d).length} items</span>
       <button class="btn btn-gray btn-sm" onclick="removeDept('${d}')" style="padding:2px 8px;font-size:11px">✕</button>
@@ -1171,7 +1195,7 @@ function exportCSV() {
 function showToast(msg, error=false) {
   const t = document.getElementById("toast");
   t.textContent = msg;
-  t.style.background = error ? "#DC2626" : "#111827";
+  t.style.background = error ? "#DC2626" : "var(--ink)";
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 3000);
 }
